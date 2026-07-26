@@ -1,0 +1,25 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: interview_agent
+
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+app:
+  storage:
+    endpoint: ${APP_STORAGE_ENDPOINT}
+    access-key: ${APP_STORAGE_ACCESS_KEY}
+    secret-key: ${APP_STORAGE_SECRET_KEY}
+    bucket: ${APP_STORAGE_BUCKET}
+    region: ${APP_STORAGE_REGION}
