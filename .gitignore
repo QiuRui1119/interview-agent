@@ -46,3 +46,6 @@ bin/
 data/
 
 .env
+
+#### Logs ###
+*.log
