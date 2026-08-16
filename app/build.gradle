@@ -27,10 +27,10 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
     testRuntimeOnly 'com.h2database:h2'
 
-//    implementation platform(libs.spring.ai.agent.utils.bom)
-//    implementation "org.springframework.ai:spring-ai-starter-model-openai:${libs.versions.springAi.get()}"
-//    implementation "org.springframework.ai:spring-ai-starter-vector-store-pgvector:${libs.versions.springAi.get()}"
-//    implementation libs.spring.ai.agent.utils
+    implementation platform(libs.spring.ai.agent.utils.bom)
+    implementation "org.springframework.ai:spring-ai-starter-model-openai:${libs.versions.springAi.get()}"
+    implementation "org.springframework.ai:spring-ai-starter-vector-store-pgvector:${libs.versions.springAi.get()}"
+    implementation libs.spring.ai.agent.utils
 
     implementation libs.tika.core
     implementation libs.tika.parsers

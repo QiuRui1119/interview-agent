@@ -32,6 +32,7 @@ public class ResumeUploadService {
     private final FileStorageService fileStorageService;
     private final ResumeParseService resumeParseService;
     private final TextCleaningService textCleaningService;
+    private final ResumeGradingService resumeGradingService;
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 
@@ -58,7 +59,7 @@ public class ResumeUploadService {
             appConfigProperties.getAllowedTypes(),
              "不支持的文件类型: " + detectedContentType);
 
-        //3. 检查简历是否已存在（去重）
+        // 3. 检查简历是否已存在（去重）
         Optional<ResumeEntity> existingResume = resumePersistenceService.findExistingResume(file);
         if (existingResume.isPresent()) {
             log.info("简历上传处理完成（重复）: {} - 耗时: {}ms",
@@ -67,7 +68,7 @@ public class ResumeUploadService {
             return handleDuplicateResume(existingResume.get());
         }
 
-        //4.解析简历文本内容
+        // 4.解析简历文本内容
         Long parseStartTime = System.currentTimeMillis();
         String resumeText = resumeParseService.parseResumeContent(file);
         String cleanedResumeText = textCleaningService.cleanText(resumeText);
@@ -77,6 +78,7 @@ public class ResumeUploadService {
             log.info("简历解析完成: {} - 耗时: {}ms, 文本长度: {}",
                 fileName, System.currentTimeMillis() - parseStartTime, cleanedResumeText.length());
         }
+
         // 5.保存简历到minIO
         Long storageStartTime = System.currentTimeMillis();
         String storageKey = fileStorageService.uploadResume(file);
@@ -89,7 +91,7 @@ public class ResumeUploadService {
         
         // 7.发送分析任务到 Redis Stream（异步处理）
 
-        //8.返回上传结果
+        // 8.返回上传结果
         return Map.of(
             "resume", Map.of(
                 "id", resumeEntity.getId(),

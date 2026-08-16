@@ -20,6 +20,18 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+  ai:
+    model:
+      chat: none
+      embedding: none
+      image: none
+      moderation: none
+      audio:
+        speech: none
+        transcription: none
+    vectorstore:
+      type: none
+
 app:
   storage:
     endpoint: ${APP_STORAGE_ENDPOINT}
@@ -29,6 +41,46 @@ app:
     region: ${APP_STORAGE_REGION}
   resume:
     allowed-types: ${APP_RESUME_ALLOWED_TYPES}
+    analysis:
+      system-prompt-path: ${APP_RESUME_ANALYSIS_SYSTEM_PROMPT_PATH}
+      user-prompt-path: ${APP_RESUME_ANALYSIS_USER_PROMPT_PATH}
+  ai:
+    default-provider: deepseek
+    agent-utils:
+      skills-root: ${APP_AI_AGENT_UTILS_SKILLS_ROOT}
+    providers:
+      dashscope:
+        base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+        api-key: ${AI_BAILIAN_API_KEY}
+        model: ${AI_MODEL:qwen3.5-flash}
+        embedding-model: text-embedding-v3
+        embedding-dimensions: 1024
+        supports-embedding: true
+      kimi:
+        base-url: https://api.moonshot.cn/v1
+        api-key: ${PROVIDER_KIMI_API_KEY}
+        model: ${PROVIDER_KIMI_MODEL:kimi-latest}
+        temperature: 1
+        supports-embedding: false
+      deepseek:
+        base-url: https://api.deepseek.com
+        api-key: ${PROVIDER_DEEPSEEK_API_KEY}
+        model: ${PROVIDER_DEEPSEEK_MODEL:deepseek-v4-flash}
+        supports-embedding: false
+      glm:
+        base-url: https://open.bigmodel.cn/api/coding/paas/v4
+        api-key: ${PROVIDER_GLM_API_KEY}
+        model: ${PROVIDER_GLM_MODEL:glm-5}
+        embedding-model: embedding-3
+        embedding-dimensions: 1024
+        supports-embedding: true
+    advisors:
+      enabled: true
+      tool-call-enabled: true
+      tool-call-conversation-enabled: true
+      message-chat-memory-enabled: false
+      message-chat-memory-max-messages: 120
+      simple-logger-enabled: false
 
 logging:
   charset:
