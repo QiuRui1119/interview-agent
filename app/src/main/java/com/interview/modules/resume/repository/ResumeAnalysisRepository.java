@@ -9,7 +9,7 @@ import com.interview.modules.resume.model.ResumeAnalysisEntity;
 import com.interview.modules.resume.model.ResumeEntity;
 
 @Repository
-public interface ResumeAnalysisRepository extends JpaRepository<ResumeAnalysisEntity, Long> {
+public interface ResumeAnalysisRepository extends JpaRepository<ResumeAnalysisEntity, Integer> {
 
   /**
    * 根据简历查找所有评测记录。
