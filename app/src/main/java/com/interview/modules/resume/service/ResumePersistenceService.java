@@ -101,14 +101,19 @@ public class ResumePersistenceService {
    */
   @Transactional(rollbackOn = Exception.class)
   public void markAnalysisProcessing(Long resumeId) {
-    ResumeEntity resumeEntity = getResumeOrThrow(resumeId);
-    resumeEntity.setAnalyzeStatus(AsyncTaskStatus.PROCESSING);
-    resumeEntity.setAnalyzeError(null);
-    resumeRepository.save(resumeEntity);
+    updateAnalysisStatus(resumeId, AsyncTaskStatus.PROCESSING, null);
   }
 
   /**
-   * 保存 AI 分析结果，并将简历分析状态标记为完成。
+   * 将简历分析状态标记为完成。
+   */
+  @Transactional(rollbackOn = Exception.class)
+  public void markAnalysisCompleted(Long resumeId) {
+    updateAnalysisStatus(resumeId, AsyncTaskStatus.COMPLETED, null);
+  }
+
+  /**
+   * 保存 AI 分析结构。
    *
    * <p>strengths 和 suggestions 是列表结构，当前以 JSON 文本形式存入数据库。</p>
    *
@@ -117,7 +122,7 @@ public class ResumePersistenceService {
    * @return 保存后重新组装的分析响应
    */
   @Transactional(rollbackOn = Exception.class)
-  public ResumeAnalysisResponse saveAnalysisResult(
+  public ResumeAnalysisResponse saveAnalysisStructure(
       Long resumeId,
       ResumeAnalysisResponse analysisResult
   ) {
@@ -127,6 +132,14 @@ public class ResumePersistenceService {
 
     try {
       ResumeEntity resumeEntity = getResumeOrThrow(resumeId);
+      ResumeAnalysisEntity existingAnalysis =
+          resumeAnalysisRepository.findFirstByResumeEntityIdOrderByAnalysisTimeDesc(resumeId);
+      if (existingAnalysis != null) {
+        log.info("Resume analysis already exists, reusing it: resumeId={}, analysisId={}",
+            resumeId, existingAnalysis.getId());
+        return entityToDTO(existingAnalysis);
+      }
+
       ResumeAnalysisEntity analysisEntity = new ResumeAnalysisEntity();
       analysisEntity.setResumeEntity(resumeEntity);
       analysisEntity.setOverallScore(analysisResult.overallScore());
@@ -136,10 +149,6 @@ public class ResumePersistenceService {
       analysisEntity.setSuggestionsJson(toJson(analysisResult.suggestions()));
       analysisEntity.setAnalysisTime(LocalDateTime.now());
 
-      resumeEntity.setAnalyzeStatus(AsyncTaskStatus.COMPLETED);
-      resumeEntity.setAnalyzeError(null);
-      resumeRepository.save(resumeEntity);
-
       ResumeAnalysisEntity savedAnalysis = resumeAnalysisRepository.save(analysisEntity);
       log.info("Saved resume analysis: resumeId={}, analysisId={}",
           resumeId, savedAnalysis.getId());
@@ -147,8 +156,21 @@ public class ResumePersistenceService {
     } catch (JsonProcessingException ex) {
       log.error("Failed to serialize resume analysis result: resumeId={}", resumeId, ex);
       throw new BusinessException(ErrorCode.RESUME_ANALYSIS_FAILED,
-          "Failed to save analysis result", ex);
+          "Failed to save analysis structure", ex);
     }
+  }
+
+  /**
+   * 保存分析结构并将简历标记为完成，两个数据库操作在同一个事务中执行。
+   */
+  @Transactional(rollbackOn = Exception.class)
+  public ResumeAnalysisResponse saveAnalysisStructureAndComplete(
+      Long resumeId,
+      ResumeAnalysisResponse analysisResult
+  ) {
+    ResumeAnalysisResponse savedAnalysis = saveAnalysisStructure(resumeId, analysisResult);
+    markAnalysisCompleted(resumeId);
+    return savedAnalysis;
   }
 
   /**
@@ -156,9 +178,23 @@ public class ResumePersistenceService {
    */
   @Transactional(rollbackOn = Exception.class)
   public void markAnalysisFailed(Long resumeId, String errorMessage) {
+    updateAnalysisStatus(resumeId, AsyncTaskStatus.FAILED, errorMessage);
+  }
+
+  /**
+   * 更新简历分析状态。
+   */
+  private void updateAnalysisStatus(
+      Long resumeId,
+      AsyncTaskStatus status,
+      String errorMessage
+  ) {
     ResumeEntity resumeEntity = getResumeOrThrow(resumeId);
-    resumeEntity.setAnalyzeStatus(AsyncTaskStatus.FAILED);
-    resumeEntity.setAnalyzeError(truncate(errorMessage, MAX_ANALYSIS_ERROR_LENGTH));
+    resumeEntity.setAnalyzeStatus(status);
+    resumeEntity.setAnalyzeError(
+        status == AsyncTaskStatus.FAILED
+            ? truncate(errorMessage, MAX_ANALYSIS_ERROR_LENGTH)
+            : null);
     resumeRepository.save(resumeEntity);
   }
 

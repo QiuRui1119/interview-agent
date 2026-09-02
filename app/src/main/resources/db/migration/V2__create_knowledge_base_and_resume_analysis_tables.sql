@@ -32,7 +32,7 @@ CREATE TABLE resume_analyses (
   summary TEXT,
   strengths_json TEXT,
   suggestions_json TEXT,
-  analysis_time BIGINT NOT NULL,
+  analysis_time TIMESTAMP(6) NOT NULL,
   CONSTRAINT fk_resume_analyses_resume
     FOREIGN KEY (resume_id) REFERENCES resumes (id) ON DELETE CASCADE
 );

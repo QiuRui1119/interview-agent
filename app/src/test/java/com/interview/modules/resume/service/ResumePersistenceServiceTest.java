@@ -55,8 +55,8 @@ class ResumePersistenceServiceTest {
   }
 
   @Test
-  @DisplayName("保存分析结果时写入评分和JSON字段并更新状态")
-  void saveAnalysisResultPersistsScoresJsonAndStatus() {
+  @DisplayName("保存分析结构时写入评分和JSON字段但不更新状态")
+  void saveAnalysisStructurePersistsScoresJsonWithoutUpdatingStatus() {
     ResumeEntity resumeEntity = new ResumeEntity();
     resumeEntity.setId(1L);
     resumeEntity.setResumeText("original resume text");
@@ -81,7 +81,7 @@ class ResumePersistenceServiceTest {
         "cleaned resume text");
 
     ResumeAnalysisResponse savedResult =
-        resumePersistenceService.saveAnalysisResult(1L, analysisResult);
+        resumePersistenceService.saveAnalysisStructure(1L, analysisResult);
 
     ArgumentCaptor<ResumeAnalysisEntity> analysisCaptor =
         ArgumentCaptor.forClass(ResumeAnalysisEntity.class);
@@ -98,8 +98,23 @@ class ResumePersistenceServiceTest {
     assertThat(savedEntity.getStrengthsJson()).contains("Java 基础扎实");
     assertThat(savedEntity.getSuggestionsJson()).contains("缺少量化指标");
     assertThat(savedEntity.getAnalysisTime()).isNotNull();
+    assertThat(resumeEntity.getAnalyzeStatus()).isEqualTo(AsyncTaskStatus.PENDING);
+    assertThat(savedResult.originalText()).isEqualTo("original resume text");
+  }
+
+  @Test
+  @DisplayName("标记分析完成时只更新简历状态")
+  void markAnalysisCompletedUpdatesStatus() {
+    ResumeEntity resumeEntity = new ResumeEntity();
+    resumeEntity.setId(1L);
+    resumeEntity.setAnalyzeStatus(AsyncTaskStatus.PROCESSING);
+    resumeEntity.setAnalyzeError("previous error");
+    when(resumeRepository.findById(1L)).thenReturn(Optional.of(resumeEntity));
+
+    resumePersistenceService.markAnalysisCompleted(1L);
+
     assertThat(resumeEntity.getAnalyzeStatus()).isEqualTo(AsyncTaskStatus.COMPLETED);
     assertThat(resumeEntity.getAnalyzeError()).isNull();
-    assertThat(savedResult.originalText()).isEqualTo("original resume text");
+    verify(resumeRepository).save(resumeEntity);
   }
 }

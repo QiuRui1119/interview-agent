@@ -9,6 +9,7 @@ import com.interview.infrastructure.file.FileStorageService;
 import com.interview.infrastructure.file.FileValidationService;
 import com.interview.infrastructure.file.TextCleaningService;
 import com.interview.modules.interview.model.ResumeAnalysisResponse;
+import com.interview.modules.resume.listener.AnalyzeStreamProducer;
 import com.interview.modules.resume.model.ResumeEntity;
 import java.util.Map;
 import java.util.Optional;
@@ -32,13 +33,12 @@ public class ResumeUploadService {
   private final FileStorageService fileStorageService;
   private final ResumeParseService resumeParseService;
   private final TextCleaningService textCleaningService;
-  private final ResumeGradingService resumeGradingService;
+  private final AnalyzeStreamProducer analyzeStreamProducer;
 
   /**
    * 上传并分析简历。
    *
-   * <p>当前先使用同步流程跑通完整闭环：
-   * 文件校验 -> 去重 -> 文本解析 -> MinIO 存储 -> 简历入库 -> AI 分析 -> 分析结果入库。</p>
+   * <p>当前流程为：文件校验 -> 去重 -> 文本解析 -> MinIO 存储 -> 简历入库 -> 发布异步分析任务。</p>
    *
    * @param file 上传的简历文件
    * @return 上传信息、存储信息、分析状态和分析结果
@@ -91,39 +91,31 @@ public class ResumeUploadService {
         file, cleanedResumeText, storageKey, storageUrl);
     log.info("Saved resume metadata: resumeId={}", resumeEntity.getId());
 
-    // 7. 调用 AI 分析并保存分析结果。后续改异步时，这里可以替换为发送任务。
-    ResumeAnalysisResponse analysisResult = analyzeAndPersist(
-        resumeEntity.getId(), cleanedResumeText);
+    // 7. 发布自包含的异步分析任务，避免请求线程等待 AI 调用。
+    try {
+      String messageId = analyzeStreamProducer.publishAnalyzeTask(
+          resumeEntity.getId(), cleanedResumeText);
+      log.info("Queued resume analysis: resumeId={}, messageId={}",
+          resumeEntity.getId(), messageId);
+    } catch (Exception ex) {
+      markAnalysisFailedQuietly(resumeEntity.getId(), ex);
+      log.error("Failed to queue resume analysis: resumeId={}", resumeEntity.getId(), ex);
+      throw new BusinessException(
+          ErrorCode.RESUME_ANALYSIS_FAILED,
+          "Failed to queue resume analysis",
+          ex);
+    }
 
-    log.info("Resume upload and analysis completed: resumeId={}, duration={}ms",
+    log.info("Resume upload completed and analysis queued: resumeId={}, duration={}ms",
         resumeEntity.getId(), System.currentTimeMillis() - startTime);
 
     return buildUploadResponse(
         resumeEntity,
         storageKey,
         storageUrl,
-        AsyncTaskStatus.COMPLETED,
-        analysisResult,
+        AsyncTaskStatus.PENDING,
+        null,
         false);
-  }
-
-  /**
-   * 执行 AI 分析并持久化结果，同时维护简历分析状态。
-   */
-  private ResumeAnalysisResponse analyzeAndPersist(Long resumeId, String resumeText) {
-    try {
-      resumePersistenceService.markAnalysisProcessing(resumeId);
-      ResumeAnalysisResponse analysisResult = resumeGradingService.analyzeResume(resumeText);
-      return resumePersistenceService.saveAnalysisResult(resumeId, analysisResult);
-    } catch (BusinessException ex) {
-      markAnalysisFailedQuietly(resumeId, ex);
-      throw ex;
-    } catch (Exception ex) {
-      markAnalysisFailedQuietly(resumeId, ex);
-      log.error("Failed to analyze uploaded resume: resumeId={}", resumeId, ex);
-      throw new BusinessException(ErrorCode.RESUME_ANALYSIS_FAILED,
-          "Failed to analyze uploaded resume", ex);
-    }
   }
 
   /**

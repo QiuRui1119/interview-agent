@@ -2,6 +2,8 @@ package com.interview.infrastructure.ai;
 
 import com.interview.common.config.LlmProviderProperties;
 import com.interview.common.config.LlmProviderProperties.ProviderConfig;
+import com.openai.core.Timeout;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.ai.chat.client.ChatClient;
@@ -18,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 public class LlmProviderRegistry {
 
   private static final double DEFAULT_TEMPERATURE = 0.2;
+  private static final Duration AI_REQUEST_TIMEOUT = Duration.ofSeconds(120);
 
   private final LlmProviderProperties llmProviderProperties;
   private final Map<String, ChatClient> chatClientCache = new ConcurrentHashMap<>();
@@ -48,6 +51,12 @@ public class LlmProviderRegistry {
 
     OpenAiChatModel chatModel = OpenAiChatModel.builder()
         .options(options)
+        .httpClientBuilderCustomizer(builder -> builder.timeout(Timeout.builder()
+            .connect(AI_REQUEST_TIMEOUT)
+            .read(AI_REQUEST_TIMEOUT)
+            .write(AI_REQUEST_TIMEOUT)
+            .request(AI_REQUEST_TIMEOUT)
+            .build()))
         .build();
 
     return ChatClient.builder(chatModel).build();
