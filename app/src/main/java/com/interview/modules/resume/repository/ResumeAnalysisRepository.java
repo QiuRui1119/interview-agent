@@ -17,4 +17,6 @@ public interface ResumeAnalysisRepository extends JpaRepository<ResumeAnalysisEn
   List<ResumeAnalysisEntity> findByResumeEntityOrderByAnalysisTimeDesc(
       ResumeEntity resumeEntity);
 
+  void deleteByResumeEntity(ResumeEntity resumeEntity);
+
 }

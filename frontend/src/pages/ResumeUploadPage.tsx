@@ -4,13 +4,14 @@ import {
   ArrowUpRight,
   Check,
   FileText,
+  Info,
   LoaderCircle,
   ShieldCheck,
   Sparkles,
   Upload,
   X,
 } from 'lucide-react'
-import { getResumes, uploadResume } from '../api/resume'
+import { deleteResume, getResumes, uploadResume } from '../api/resume'
 import { ResumeList } from '../components/ResumeList'
 import type { ResumeListItem, ResumeUploadResponse } from '../types/resume'
 
@@ -75,9 +76,11 @@ export function ResumeUploadPage({ onOpenDetail }: ResumeUploadPageProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [uploadState, setUploadState] = useState<UploadState>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [noticeMessage, setNoticeMessage] = useState<string | null>(null)
   const [resumeId, setResumeId] = useState<number | null>(null)
   const [uploadedResumes, setUploadedResumes] = useState<ResumeListItem[]>([])
   const [isResumeListLoading, setIsResumeListLoading] = useState(true)
+  const [deletingResumeId, setDeletingResumeId] = useState<number | null>(null)
 
   const loadUploadedResumes = useCallback(async () => {
     try {
@@ -120,6 +123,7 @@ export function ResumeUploadPage({ onOpenDetail }: ResumeUploadPageProps) {
     if (!file) return
     const validationError = validateFile(file)
     setErrorMessage(validationError)
+    setNoticeMessage(null)
     setResumeId(null)
     if (validationError) {
       setSelectedFile(null)
@@ -134,13 +138,18 @@ export function ResumeUploadPage({ onOpenDetail }: ResumeUploadPageProps) {
     if (!selectedFile || uploadState === 'uploading') return
     setUploadState('uploading')
     setErrorMessage(null)
+    setNoticeMessage(null)
 
     try {
       const response = await uploadResume(selectedFile)
       setResumeId(response.resume.id)
       setUploadState(statusFromResponse(response))
+      if (response.duplicate) {
+        setNoticeMessage('This resume has already been uploaded. The existing resume was found.')
+      }
     } catch (error) {
       setUploadState('failed')
+      setNoticeMessage(null)
       setErrorMessage(error instanceof Error ? error.message : 'Upload failed. Please try again.')
     }
   }
@@ -149,8 +158,27 @@ export function ResumeUploadPage({ onOpenDetail }: ResumeUploadPageProps) {
     setSelectedFile(null)
     setUploadState('idle')
     setErrorMessage(null)
+    setNoticeMessage(null)
     setResumeId(null)
     if (inputRef.current) inputRef.current.value = ''
+  }
+
+  const handleDeleteResume = async (id: number) => {
+    const resume = uploadedResumes.find((item) => item.id === id)
+    const filename = resume?.filename ?? 'this resume'
+    if (!window.confirm(`Delete "${filename}" and its analysis records?`)) return
+
+    setDeletingResumeId(id)
+    setErrorMessage(null)
+    try {
+      await deleteResume(id)
+      setUploadedResumes((previous) => previous.filter((item) => item.id !== id))
+      if (resumeId === id) resetUpload()
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to delete the resume.')
+    } finally {
+      setDeletingResumeId(null)
+    }
   }
 
   const currentStatus = statusCopy[uploadState]
@@ -241,6 +269,12 @@ export function ResumeUploadPage({ onOpenDetail }: ResumeUploadPageProps) {
               <span>{errorMessage}</span>
             </div>
           )}
+          {noticeMessage && (
+            <div className="alert notice-alert" role="status">
+              <Info size={18} />
+              <span>{noticeMessage}</span>
+            </div>
+          )}
 
           <div className="upload-actions">
             <div className="selection-note">
@@ -261,7 +295,7 @@ export function ResumeUploadPage({ onOpenDetail }: ResumeUploadPageProps) {
               <h2>Uploaded files</h2>
             </div>
           </div>
-          {isResumeListLoading ? <div className="compact-loading"><LoaderCircle className="spin" size={16} /> Loading files...</div> : <ResumeList resumes={uploadedResumes} compact onOpenDetail={onOpenDetail} />}
+          {isResumeListLoading ? <div className="compact-loading"><LoaderCircle className="spin" size={16} /> Loading files...</div> : <ResumeList resumes={uploadedResumes} compact onOpenDetail={onOpenDetail} onDelete={(id) => void handleDeleteResume(id)} deletingResumeId={deletingResumeId} />}
         </aside>
       </section>
 

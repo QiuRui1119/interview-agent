@@ -6,8 +6,9 @@ import {
   FileText,
   LoaderCircle,
   RefreshCw,
+  Trash2,
 } from 'lucide-react'
-import { getResumeAnalysis, getResumeDetail, reanalyzeResume } from '../api/resume'
+import { deleteResume, getResumeAnalysis, getResumeDetail, reanalyzeResume } from '../api/resume'
 import type { ResumeAnalysisResponse, ResumeDetail } from '../types/resume'
 
 interface ResumeDetailPageProps {
@@ -42,6 +43,7 @@ export function ResumeDetailPage({ resumeId, onBack }: ResumeDetailPageProps) {
   const [analysis, setAnalysis] = useState<ResumeAnalysisResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isRetrying, setIsRetrying] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const loadResumeData = useCallback(async (silent: boolean) => {
@@ -99,6 +101,22 @@ export function ResumeDetailPage({ resumeId, onBack }: ResumeDetailPageProps) {
     }
   }
 
+  const handleDelete = async () => {
+    if (!window.confirm(`Delete "${resume?.filename ?? 'this resume'}" and its analysis records?`)) return
+
+    setIsDeleting(true)
+    setErrorMessage(null)
+    try {
+      await deleteResume(resumeId)
+      onBack()
+    } catch (error) {
+      console.error('Failed to delete resume', error)
+      setErrorMessage(error instanceof Error ? error.message : 'Unable to delete the resume.')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <main className="app-shell detail-page">
@@ -123,7 +141,13 @@ export function ResumeDetailPage({ resumeId, onBack }: ResumeDetailPageProps) {
     <main className="app-shell detail-page">
       <header className="topbar">
         <button className="back-button" type="button" onClick={onBack}><ArrowLeft size={17} /> Back to upload</button>
-        <div className="workspace-state"><span className="live-dot" /> Resume detail</div>
+        <div className="detail-actions">
+          <button className="delete-button" type="button" disabled={isDeleting} onClick={() => void handleDelete()}>
+            {isDeleting ? <LoaderCircle className="spin" size={16} /> : <Trash2 size={16} />}
+            Delete resume
+          </button>
+          <div className="workspace-state"><span className="live-dot" /> Resume detail</div>
+        </div>
       </header>
 
       <section className="detail-heading">
@@ -161,7 +185,17 @@ export function ResumeDetailPage({ resumeId, onBack }: ResumeDetailPageProps) {
         <article className="analysis-panel">
           <div className="panel-heading">
             <div><p className="section-kicker">Analysis</p><h2>Latest review</h2></div>
-            {resume.analyzeStatus === 'FAILED' && <button className="refresh-button retry-button" type="button" disabled={isRetrying} onClick={() => void handleReanalyze()}>{isRetrying ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />} Retry analysis</button>}
+            {resume.analyzeStatus !== 'PENDING' && resume.analyzeStatus !== 'PROCESSING' && (
+              <button
+                className="refresh-button retry-button"
+                type="button"
+                disabled={isRetrying}
+                onClick={() => void handleReanalyze()}
+              >
+                {isRetrying ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />}
+                {resume.analyzeStatus === 'FAILED' ? 'Retry analysis' : 'Reanalyze'}
+              </button>
+            )}
           </div>
 
           {resume.analyzeStatus === 'FAILED' ? (

@@ -137,6 +137,25 @@ public class ResumeUploadService {
   }
 
   /**
+   * 删除简历、分析记录以及对象存储中的原始文件。
+   */
+  public void deleteResume(Long resumeId) {
+    String storageKey = resumePersistenceService.deleteResume(resumeId);
+    if (storageKey == null || storageKey.isBlank()) {
+      return;
+    }
+
+    try {
+      fileStorageService.deleteResume(storageKey);
+      log.info("Deleted resume file from storage: resumeId={}, storageKey={}",
+          resumeId, storageKey);
+    } catch (Exception ex) {
+      log.error("Failed to delete resume file from storage: resumeId={}, storageKey={}",
+          resumeId, storageKey, ex);
+    }
+  }
+
+  /**
    * 分析失败时尽量记录失败状态，但不能让状态更新失败覆盖原始异常。
    */
   private void markAnalysisFailedQuietly(Long resumeId, Exception failure) {

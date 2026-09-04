@@ -1,12 +1,17 @@
 package com.interview.modules.resume.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.interview.common.exception.BusinessException;
 import com.interview.common.model.AsyncTaskStatus;
 import com.interview.infrastructure.Mapper.ResumeMapper;
 import com.interview.infrastructure.file.FileHashService;
@@ -21,6 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 
 @DisplayName("简历分析持久化服务")
 class ResumePersistenceServiceTest {
@@ -116,5 +122,33 @@ class ResumePersistenceServiceTest {
     assertThat(resumeEntity.getAnalyzeStatus()).isEqualTo(AsyncTaskStatus.COMPLETED);
     assertThat(resumeEntity.getAnalyzeError()).isNull();
     verify(resumeRepository).save(resumeEntity);
+  }
+
+  @Test
+  @DisplayName("删除简历时先删除分析记录再删除简历")
+  void deleteResumeDeletesAnalysesBeforeResume() {
+    ResumeEntity resumeEntity = new ResumeEntity();
+    resumeEntity.setId(1L);
+    resumeEntity.setStorageKey("resumes/2026/09/04/resume.pdf");
+    when(resumeRepository.findById(1L)).thenReturn(Optional.of(resumeEntity));
+
+    String storageKey = resumePersistenceService.deleteResume(1L);
+
+    InOrder inOrder = inOrder(resumeAnalysisRepository, resumeRepository);
+    inOrder.verify(resumeAnalysisRepository).deleteByResumeEntity(resumeEntity);
+    inOrder.verify(resumeRepository).delete(resumeEntity);
+    assertThat(storageKey).isEqualTo(resumeEntity.getStorageKey());
+  }
+
+  @Test
+  @DisplayName("删除不存在的简历时不删除任何记录")
+  void deleteResumeFailsWhenResumeDoesNotExist() {
+    when(resumeRepository.findById(1L)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> resumePersistenceService.deleteResume(1L))
+        .isInstanceOf(BusinessException.class);
+
+    verifyNoInteractions(resumeAnalysisRepository);
+    verify(resumeRepository, never()).delete(any(ResumeEntity.class));
   }
 }

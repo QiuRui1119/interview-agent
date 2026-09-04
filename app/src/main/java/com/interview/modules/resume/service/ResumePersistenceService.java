@@ -240,6 +240,21 @@ public class ResumePersistenceService {
   }
 
   /**
+   * 删除简历及其全部分析记录。
+   *
+   * @param resumeId 简历 ID
+   * @return 被删除简历的对象存储 key
+   */
+  @Transactional(rollbackOn = Exception.class)
+  public String deleteResume(Long resumeId) {
+    ResumeEntity resumeEntity = getResumeOrThrow(resumeId);
+    resumeAnalysisRepository.deleteByResumeEntity(resumeEntity);
+    resumeRepository.delete(resumeEntity);
+    log.info("Deleted resume and analysis records: resumeId={}", resumeId);
+    return resumeEntity.getStorageKey();
+  }
+
+  /**
    * 重置简历分析状态并返回自包含任务需要的简历文本，保留历史分析记录。
    */
   @Transactional(rollbackOn = Exception.class)

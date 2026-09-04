@@ -30,6 +30,12 @@ export function getResumeAnalysis(resumeId: number): Promise<ResumeAnalysisRespo
   return request<ResumeAnalysisResponse | null>(routes.resumeAnalysis(resumeId))
 }
 
+export function deleteResume(resumeId: number): Promise<void> {
+  return request<void>(routes.resumeDelete(resumeId), {
+    method: 'DELETE',
+  })
+}
+
 export function reanalyzeResume(resumeId: number): Promise<ResumeAnalysisStatusResponse> {
   return request<ResumeAnalysisStatusResponse>(routes.resumeReanalyze(resumeId), {
     method: 'POST',
