@@ -21,6 +21,10 @@ spring:
     locations: classpath:db/migration
 
   ai:
+    # 禁用自动重试机制，让异常立即返回
+    retry:
+      max-attempts: 1  # 不重试，失败立即返回
+      on-client-errors: false
     model:
       chat: none
       embedding: none

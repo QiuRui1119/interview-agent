@@ -46,6 +46,7 @@ public class LlmProviderRegistry {
         .apiKey(config.getApiKey())
         .baseUrl(config.getBaseUrl())
         .model(config.getModel())
+        .timeout(AI_REQUEST_TIMEOUT)
         .temperature(resolveTemperature(config))
         .build();
 

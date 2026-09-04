@@ -8,8 +8,8 @@ import com.interview.infrastructure.file.ContentTypeDetectionService;
 import com.interview.infrastructure.file.FileStorageService;
 import com.interview.infrastructure.file.FileValidationService;
 import com.interview.infrastructure.file.TextCleaningService;
-import com.interview.modules.interview.model.ResumeAnalysisResponse;
 import com.interview.modules.resume.listener.AnalyzeStreamProducer;
+import com.interview.modules.resume.model.ResumeAnalysisStatusResponse;
 import com.interview.modules.resume.model.ResumeEntity;
 import java.util.Map;
 import java.util.Optional;
@@ -114,8 +114,26 @@ public class ResumeUploadService {
         storageKey,
         storageUrl,
         AsyncTaskStatus.PENDING,
-        null,
         false);
+  }
+
+  /**
+   * 重新发布简历分析任务。
+   */
+  public ResumeAnalysisStatusResponse reanalyzeResume(Long resumeId) {
+    String resumeText = resumePersistenceService.resetAnalysisForRetry(resumeId);
+    try {
+      String messageId = analyzeStreamProducer.publishAnalyzeTask(resumeId, resumeText);
+      log.info("Requeued resume analysis: resumeId={}, messageId={}", resumeId, messageId);
+      return new ResumeAnalysisStatusResponse(AsyncTaskStatus.PENDING, null);
+    } catch (Exception ex) {
+      markAnalysisFailedQuietly(resumeId, ex);
+      log.error("Failed to requeue resume analysis: resumeId={}", resumeId, ex);
+      throw new BusinessException(
+          ErrorCode.RESUME_ANALYSIS_FAILED,
+          "Failed to requeue resume analysis",
+          ex);
+    }
   }
 
   /**
@@ -135,24 +153,12 @@ public class ResumeUploadService {
    */
   private Map<String, Object> handleDuplicateResume(ResumeEntity existingResume) {
     log.info("Returning existing resume: resumeId={}", existingResume.getId());
-    Optional<ResumeAnalysisResponse> analysisResult =
-        resumePersistenceService.getLatestAnalysisResult(existingResume.getId());
-
-    return analysisResult.map(result -> buildUploadResponse(
+    return buildUploadResponse(
         existingResume,
         existingResume.getStorageKey(),
         existingResume.getStorageUrl(),
         existingResume.getAnalyzeStatus(),
-        result,
-        true
-    )).orElseGet(() -> buildUploadResponse(
-        existingResume,
-        existingResume.getStorageKey(),
-        existingResume.getStorageUrl(),
-        existingResume.getAnalyzeStatus(),
-        null,
-        true
-    ));
+        true);
   }
 
   /**
@@ -163,7 +169,6 @@ public class ResumeUploadService {
       String storageKey,
       String storageUrl,
       AsyncTaskStatus analysisStatus,
-      ResumeAnalysisResponse analysisResult,
       boolean duplicate
   ) {
     Map<String, Object> response = new java.util.LinkedHashMap<>();
@@ -177,9 +182,6 @@ public class ResumeUploadService {
         "fileUrl", storageUrl != null ? storageUrl : "",
         "resumeId", resumeEntity.getId()
     ));
-    if (analysisResult != null) {
-      response.put("analysisResult", analysisResult);
-    }
     response.put("duplicate", duplicate);
     return response;
   }

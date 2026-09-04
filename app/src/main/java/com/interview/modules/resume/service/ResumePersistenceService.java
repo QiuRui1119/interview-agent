@@ -11,7 +11,9 @@ import com.interview.infrastructure.Mapper.ResumeMapper;
 import com.interview.infrastructure.file.FileHashService;
 import com.interview.modules.interview.model.ResumeAnalysisResponse;
 import com.interview.modules.resume.model.ResumeAnalysisEntity;
+import com.interview.modules.resume.model.ResumeDetailResponse;
 import com.interview.modules.resume.model.ResumeEntity;
+import com.interview.modules.resume.model.ResumeListItemDTO;
 import com.interview.modules.resume.repository.ResumeAnalysisRepository;
 import com.interview.modules.resume.repository.ResumeRepository;
 import jakarta.transaction.Transactional;
@@ -22,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
+import org.springframework.data.domain.Sort;
 
 @Slf4j
 @Service
@@ -132,14 +135,6 @@ public class ResumePersistenceService {
 
     try {
       ResumeEntity resumeEntity = getResumeOrThrow(resumeId);
-      ResumeAnalysisEntity existingAnalysis =
-          resumeAnalysisRepository.findFirstByResumeEntityIdOrderByAnalysisTimeDesc(resumeId);
-      if (existingAnalysis != null) {
-        log.info("Resume analysis already exists, reusing it: resumeId={}, analysisId={}",
-            resumeId, existingAnalysis.getId());
-        return entityToDTO(existingAnalysis);
-      }
-
       ResumeAnalysisEntity analysisEntity = new ResumeAnalysisEntity();
       analysisEntity.setResumeEntity(resumeEntity);
       analysisEntity.setOverallScore(analysisResult.overallScore());
@@ -203,23 +198,57 @@ public class ResumePersistenceService {
    */
   @Transactional
   public Optional<ResumeAnalysisResponse> getLatestAnalysisResult(Long resumeId) {
-    return Optional.ofNullable(
-        resumeAnalysisRepository.findFirstByResumeEntityIdOrderByAnalysisTimeDesc(resumeId)
-    ).map(this::entityToDTO);
+    ResumeEntity resumeEntity = getResumeOrThrow(resumeId);
+    return findLatestAnalysis(resumeEntity).map(this::entityToDTO);
   }
 
   /**
-   * 获取某份简历最新一次分析结果；简历不存在或尚无分析结果时抛业务异常。
+   * 获取简历历史列表及最新分析摘要。
    */
   @Transactional
-  public ResumeAnalysisResponse getLatestAnalysisResultOrThrow(Long resumeId) {
-    if (!resumeRepository.existsById(resumeId)) {
-      throw new BusinessException(ErrorCode.RESUME_NOT_FOUND, "Resume not found: " + resumeId);
+  public List<ResumeListItemDTO> getResumeList() {
+    List<ResumeEntity> resumes = resumeRepository.findAll(
+        Sort.by(Sort.Direction.DESC, "uploadTime"));
+    if (resumes.isEmpty()) {
+      return List.of();
     }
-    return getLatestAnalysisResult(resumeId)
-        .orElseThrow(() -> new BusinessException(
-            ErrorCode.RESUME_ANALYSIS_NOT_FOUND,
-            "Resume analysis result not found: " + resumeId));
+
+    return resumes.stream()
+        .map(resume -> toListItem(resume, findLatestAnalysis(resume).orElse(null)))
+        .toList();
+  }
+
+  /**
+   * 获取简历详情及全部分析记录。
+   */
+  @Transactional
+  public ResumeDetailResponse getResumeDetail(Long resumeId) {
+    ResumeEntity resumeEntity = getResumeOrThrow(resumeId);
+
+    return new ResumeDetailResponse(
+        resumeEntity.getId(),
+        resumeEntity.getOriginalFileName(),
+        resumeEntity.getFileSize(),
+        resumeEntity.getUploadTime(),
+        resumeEntity.getLastAccessTime(),
+        resumeEntity.getAccessCount(),
+        resumeEntity.getStorageKey(),
+        resumeEntity.getStorageUrl(),
+        resumeEntity.getResumeText(),
+        resumeEntity.getAnalyzeStatus(),
+        resumeEntity.getAnalyzeError());
+  }
+
+  /**
+   * 重置简历分析状态并返回自包含任务需要的简历文本，保留历史分析记录。
+   */
+  @Transactional(rollbackOn = Exception.class)
+  public String resetAnalysisForRetry(Long resumeId) {
+    ResumeEntity resumeEntity = getResumeOrThrow(resumeId);
+    resumeEntity.setAnalyzeStatus(AsyncTaskStatus.PENDING);
+    resumeEntity.setAnalyzeError(null);
+    resumeRepository.save(resumeEntity);
+    return resumeEntity.getResumeText();
   }
 
   /**
@@ -259,6 +288,29 @@ public class ResumePersistenceService {
         .orElseThrow(() -> new BusinessException(
             ErrorCode.RESUME_NOT_FOUND,
             "Resume not found: " + resumeId));
+  }
+
+  private ResumeListItemDTO toListItem(
+      ResumeEntity resumeEntity,
+      ResumeAnalysisEntity latestAnalysis
+  ) {
+    return new ResumeListItemDTO(
+        resumeEntity.getId(),
+        resumeEntity.getOriginalFileName(),
+        resumeEntity.getFileSize(),
+        resumeEntity.getUploadTime(),
+        resumeEntity.getAccessCount(),
+        latestAnalysis != null ? latestAnalysis.getOverallScore() : null,
+        latestAnalysis != null ? latestAnalysis.getAnalysisTime() : null,
+        0,
+        resumeEntity.getAnalyzeStatus(),
+        resumeEntity.getAnalyzeError());
+  }
+
+  private Optional<ResumeAnalysisEntity> findLatestAnalysis(ResumeEntity resumeEntity) {
+    return resumeAnalysisRepository.findByResumeEntityOrderByAnalysisTimeDesc(resumeEntity)
+        .stream()
+        .findFirst();
   }
 
   /**
