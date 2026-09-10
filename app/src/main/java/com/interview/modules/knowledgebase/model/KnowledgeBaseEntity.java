@@ -11,13 +11,18 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 
 @Data
 @Entity
 @Table(name = "knowledge_bases", indexes = {
-    @Index(name = "idx_knowledge_base_hash", columnList = "file_hash", unique = true),
+    @Index(name = "idx_kb_source_type", columnList = "source_type"),
     @Index(name = "idx_knowledge_base_category", columnList = "category")
+}, uniqueConstraints = {
+    @UniqueConstraint(
+        name = "uk_kb_source_hash",
+        columnNames = {"source_type", "file_hash"})
 })
 public class KnowledgeBaseEntity {
   @Id
@@ -25,8 +30,24 @@ public class KnowledgeBaseEntity {
   private Long id;
 
   // 文件内容的SHA-256哈希值，用于去重
-  @Column(nullable = false, unique = true, length = 64)
+  @Column(nullable = false, length = 64)
   private String fileHash;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "source_type", nullable = false, length = 20)
+  private KnowledgeSourceType sourceType = KnowledgeSourceType.USER_UPLOAD;
+
+  @Column(name = "source_key", length = 500)
+  private String sourceKey;
+
+  @Column(name = "content_hash", length = 64)
+  private String contentHash;
+
+  @Column(nullable = false)
+  private Integer version = 1;
+
+  @Column(nullable = false)
+  private Boolean enabled = true;
 
   // 知识库名称（用户自定义或从文件名提取）
   @Column(nullable = false)

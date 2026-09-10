@@ -44,6 +44,7 @@ public enum ErrorCode {
     // ========== 知识库模块错误 6xxx ==========
     KNOWLEDGE_BASE_NOT_FOUND(6001, "知识库不存在"),
     KNOWLEDGE_BASE_PARSE_FAILED(6002, "知识库文件解析失败"),
+    KNOWLEDGE_BASE_DUPLICATE(6003, "知识库文档已存在"),
     KNOWLEDGE_BASE_QUERY_FAILED(6004, "知识库查询失败"),
     KNOWLEDGE_BASE_DELETE_FAILED(6005, "知识库删除失败"),
     KNOWLEDGE_BASE_VECTORIZATION_FAILED(6006, "知识库向量化失败"),

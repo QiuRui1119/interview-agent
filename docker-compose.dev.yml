@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:17
+    image: pgvector/pgvector:pg17
     container_name: interview_agent_postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}

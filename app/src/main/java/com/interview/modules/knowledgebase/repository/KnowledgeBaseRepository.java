@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import com.interview.modules.knowledgebase.model.VectorStatus;
+import com.interview.modules.knowledgebase.model.KnowledgeSourceType;
 import java.util.Optional;
 import java.util.List;
 
@@ -16,12 +17,16 @@ public interface KnowledgeBaseRepository extends JpaRepository<KnowledgeBaseEnti
     /**
      * 根据文件哈希查找知识库（用于去重）
      */
-    Optional<KnowledgeBaseEntity> findByFileHash(String fileHash);
+    Optional<KnowledgeBaseEntity> findByFileHashAndSourceType(
+        String fileHash, KnowledgeSourceType sourceType);
+
+    Optional<KnowledgeBaseEntity> findBySourceTypeAndSourceKey(
+        KnowledgeSourceType sourceType, String sourceKey);
 
     /**
      * 检查文件哈希是否存在
      */
-    boolean existsByFileHash(String fileHash);
+    boolean existsByFileHashAndSourceType(String fileHash, KnowledgeSourceType sourceType);
 
     /**
      * 按上传时间倒序查找所有知识库

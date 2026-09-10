@@ -34,7 +34,12 @@ spring:
         speech: none
         transcription: none
     vectorstore:
-      type: none
+      pgvector:
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 1024
+        initialize-schema: false
+        remove-existing-vector-store-table: false
 
 app:
   storage:
@@ -50,6 +55,8 @@ app:
       user-prompt-path: ${APP_RESUME_ANALYSIS_USER_PROMPT_PATH}
   ai:
     default-provider: deepseek
+    default-embedding-provider: dashscope
+    embedding-dimensions: 1024
     agent-utils:
       skills-root: ${APP_AI_AGENT_UTILS_SKILLS_ROOT}
     providers:
