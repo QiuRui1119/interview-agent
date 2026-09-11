@@ -180,11 +180,13 @@ public class KnowledgeBasePersistenceService {
         entity.getName(),
         entity.getCategory(),
         entity.getOriginalFileName(),
+        entity.getFileSize(),
         entity.getSourceType(),
         entity.getVectorStatus(),
         entity.getVectorError(),
-        entity.getVectorChunkCount(),
-        entity.getUploadTime());
+        entity.getVectorChunkCount() == null ? 0 : entity.getVectorChunkCount(),
+        entity.getUploadTime(),
+        entity.getEnabled());
   }
 
   private static String truncate(String value, int maxLength) {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   AlertCircle,
   ArrowLeft,
+  BookOpen,
   CheckCircle2,
   FileText,
   LoaderCircle,
@@ -9,6 +10,8 @@ import {
   Trash2,
 } from 'lucide-react'
 import { deleteResume, getResumeAnalysis, getResumeDetail, reanalyzeResume } from '../api/resume'
+import { Link } from 'react-router-dom'
+import { PAGE_ROUTES } from '../constants/routes'
 import type { ResumeAnalysisResponse, ResumeDetail } from '../types/resume'
 
 interface ResumeDetailPageProps {
@@ -142,6 +145,7 @@ export function ResumeDetailPage({ resumeId, onBack }: ResumeDetailPageProps) {
       <header className="topbar">
         <button className="back-button" type="button" onClick={onBack}><ArrowLeft size={17} /> Back to upload</button>
         <div className="detail-actions">
+          <Link className="app-nav-link" to={PAGE_ROUTES.knowledgebase}><BookOpen size={15} /> Knowledge base</Link>
           <button className="delete-button" type="button" disabled={isDeleting} onClick={() => void handleDelete()}>
             {isDeleting ? <LoaderCircle className="spin" size={16} /> : <Trash2 size={16} />}
             Delete resume

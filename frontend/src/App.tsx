@@ -1,32 +1,36 @@
-import { useCallback, useEffect, useState } from 'react'
+import { BrowserRouter, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom'
 import { ResumeDetailPage } from './pages/ResumeDetailPage'
 import { ResumeUploadPage } from './pages/ResumeUploadPage'
+import { KnowledgeBaseManagePage } from './pages/KnowledgeBaseManagePage'
+import { KnowledgeBaseUploadPage } from './pages/KnowledgeBaseUploadPage'
+import { AppLayout } from './components/AppLayout'
+import { PAGE_ROUTES } from './constants/routes'
 import './App.css'
 
+function ResumeDetailRoute() {
+  const navigate = useNavigate()
+  const { resumeId } = useParams()
+  return <ResumeDetailPage resumeId={Number(resumeId)} onBack={() => navigate(PAGE_ROUTES.resumes)} />
+}
+
+function ResumeUploadRoute() {
+  const navigate = useNavigate()
+  return <ResumeUploadPage onOpenDetail={(id) => navigate(PAGE_ROUTES.resumeDetail(id))} />
+}
+
 function App() {
-  const [path, setPath] = useState(window.location.pathname)
-
-  const navigate = useCallback((nextPath: string) => {
-    window.history.pushState({}, '', nextPath)
-    setPath(nextPath)
-  }, [])
-
-  useEffect(() => {
-    const handlePopState = () => setPath(window.location.pathname)
-    window.addEventListener('popstate', handlePopState)
-    return () => window.removeEventListener('popstate', handlePopState)
-  }, [])
-
-  const detailMatch = path.match(/^\/resumes\/(\d+)$/)
-  if (detailMatch) {
-    return <ResumeDetailPage resumeId={Number(detailMatch[1])} onBack={() => navigate('/')} />
-  }
-
-  return (
-    <ResumeUploadPage
-      onOpenDetail={(id) => navigate(`/resumes/${id}`)}
-    />
-  )
+  return <BrowserRouter>
+    <Routes>
+      <Route element={<AppLayout />}>
+        <Route path="/" element={<Navigate to={PAGE_ROUTES.resumes} replace />} />
+        <Route path={PAGE_ROUTES.resumes} element={<ResumeUploadRoute />} />
+        <Route path="/resumes/:resumeId" element={<ResumeDetailRoute />} />
+        <Route path={PAGE_ROUTES.knowledgebase} element={<KnowledgeBaseManagePage />} />
+        <Route path={PAGE_ROUTES.knowledgebaseUpload} element={<KnowledgeBaseUploadPage />} />
+        <Route path="*" element={<Navigate to={PAGE_ROUTES.resumes} replace />} />
+      </Route>
+    </Routes>
+  </BrowserRouter>
 }
 
 export default App

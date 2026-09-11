@@ -1,4 +1,4 @@
-import { routes } from '../constants/routes'
+import { API_ROUTES } from '../constants/routes'
 import type {
   ResumeAnalysisStatusResponse,
   ResumeAnalysisResponse,
@@ -12,32 +12,32 @@ export function uploadResume(file: File): Promise<ResumeUploadResponse> {
   const formData = new FormData()
   formData.append('file', file)
 
-  return request<ResumeUploadResponse>(routes.resumeUpload, {
+  return request<ResumeUploadResponse>(API_ROUTES.resumeUpload, {
     method: 'POST',
     body: formData,
   })
 }
 
 export function getResumes(): Promise<ResumeListItem[]> {
-  return request<ResumeListItem[]>(routes.resumes)
+  return request<ResumeListItem[]>(API_ROUTES.resumes)
 }
 
 export function getResumeDetail(resumeId: number): Promise<ResumeDetail> {
-  return request<ResumeDetail>(routes.resumeDetail(resumeId))
+  return request<ResumeDetail>(API_ROUTES.resumeDetail(resumeId))
 }
 
 export function getResumeAnalysis(resumeId: number): Promise<ResumeAnalysisResponse | null> {
-  return request<ResumeAnalysisResponse | null>(routes.resumeAnalysis(resumeId))
+  return request<ResumeAnalysisResponse | null>(API_ROUTES.resumeAnalysis(resumeId))
 }
 
 export function deleteResume(resumeId: number): Promise<void> {
-  return request<void>(routes.resumeDelete(resumeId), {
+  return request<void>(API_ROUTES.resumeDelete(resumeId), {
     method: 'DELETE',
   })
 }
 
 export function reanalyzeResume(resumeId: number): Promise<ResumeAnalysisStatusResponse> {
-  return request<ResumeAnalysisStatusResponse>(routes.resumeReanalyze(resumeId), {
+  return request<ResumeAnalysisStatusResponse>(API_ROUTES.resumeReanalyze(resumeId), {
     method: 'POST',
   })
 }

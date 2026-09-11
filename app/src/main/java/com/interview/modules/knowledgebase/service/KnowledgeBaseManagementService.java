@@ -73,7 +73,8 @@ public class KnowledgeBaseManagementService {
         entity.getId(),
         entity.getName(),
         entity.getSourceType(),
-        VectorStatus.PENDING);
+        VectorStatus.PENDING,
+        false);
   }
 
   public void delete(Long kbId) {

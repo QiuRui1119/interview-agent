@@ -4,5 +4,6 @@ public record KnowledgeBaseUploadResponseDTO(
     Long id,
     String name,
     KnowledgeSourceType sourceType,
-    VectorStatus vectorStatus
+    VectorStatus vectorStatus,
+    boolean duplicate
 ) {}

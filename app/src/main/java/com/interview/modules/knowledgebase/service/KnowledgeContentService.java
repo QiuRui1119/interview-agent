@@ -59,7 +59,10 @@ public class KnowledgeContentService {
   private String loadClasspathDocument(KnowledgeBaseEntity knowledgeBase) {
     String sourceKey = requireValue(
         knowledgeBase.getSourceKey(), "Built-in knowledge base source key must not be blank");
-    ClassPathResource resource = new ClassPathResource(sourceKey);
+    String classpathLocation = sourceKey.startsWith("classpath:")
+        ? sourceKey.substring("classpath:".length())
+        : sourceKey;
+    ClassPathResource resource = new ClassPathResource(classpathLocation);
 
     try (InputStream inputStream = resource.getInputStream()) {
       return clean(

@@ -3,6 +3,7 @@ package com.interview.modules.knowledgebase.service;
 import com.interview.infrastructure.file.FileHashService;
 import com.interview.modules.knowledgebase.listener.VectorizeStreamProducer;
 import com.interview.modules.knowledgebase.model.KnowledgeBaseEntity;
+import com.interview.modules.knowledgebase.model.VectorStatus;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -60,6 +61,11 @@ public class BuiltInKnowledgeBootstrapService {
       }
 
       if (contentHash.equals(existing.getContentHash())) {
+        if (existing.getVectorStatus() == VectorStatus.FAILED) {
+          persistenceService.markPending(existing.getId());
+          publish(existing, "retry");
+          return;
+        }
         log.debug("Built-in knowledge unchanged, skipping: sourceKey={}", sourceKey);
         return;
       }

@@ -7,9 +7,11 @@ public record KnowledgeBaseListItemDTO(
     String name,
     String category,
     String originalFileName,
+    Long fileSize,
     KnowledgeSourceType sourceType,
     VectorStatus vectorStatus,
     String vectorError,
     Integer vectorChunkCount,
-    LocalDateTime uploadTime
+    LocalDateTime uploadTime,
+    Boolean enabled
 ) {}

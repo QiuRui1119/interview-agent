@@ -54,9 +54,13 @@ public class KnowledgeBaseUploadService {
     String fileHash = fileHashService.calculateHash(file);
     Optional<KnowledgeBaseEntity> existing = persistenceService.findUploadedByFileHash(fileHash);
     if (existing.isPresent()) {
-      throw new BusinessException(
-          ErrorCode.KNOWLEDGE_BASE_DUPLICATE,
-          "Knowledge base document already exists: " + originalFileName);
+      KnowledgeBaseEntity existingEntity = existing.get();
+      return new KnowledgeBaseUploadResponseDTO(
+          existingEntity.getId(),
+          existingEntity.getName(),
+          existingEntity.getSourceType(),
+          existingEntity.getVectorStatus(),
+          true);
     }
 
     String storageKey = fileStorageService.uploadKnowledgeBase(file);
@@ -102,7 +106,8 @@ public class KnowledgeBaseUploadService {
         entity.getId(),
         entity.getName(),
         entity.getSourceType(),
-        entity.getVectorStatus());
+        entity.getVectorStatus(),
+        false);
   }
 
   private void deleteStorageQuietly(String storageKey) {

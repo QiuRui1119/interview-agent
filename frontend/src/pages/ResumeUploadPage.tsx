@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   AlertCircle,
   ArrowUpRight,
+  BookOpen,
   Check,
   FileText,
   Info,
@@ -14,6 +15,8 @@ import {
 import { deleteResume, getResumes, uploadResume } from '../api/resume'
 import { ResumeList } from '../components/ResumeList'
 import type { ResumeListItem, ResumeUploadResponse } from '../types/resume'
+import { Link } from 'react-router-dom'
+import { PAGE_ROUTES } from '../constants/routes'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 const ACCEPTED_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'md']
@@ -194,7 +197,7 @@ export function ResumeUploadPage({ onOpenDetail }: ResumeUploadPageProps) {
             <span className="brand-caption">Resume workspace</span>
           </div>
         </div>
-        <div className="workspace-state"><span className="live-dot" /> Analysis workspace</div>
+        <div className="resume-topbar-actions"><Link className="app-nav-link" to={PAGE_ROUTES.knowledgebase}><BookOpen size={15} /> Knowledge base</Link><div className="workspace-state"><span className="live-dot" /> Analysis workspace</div></div>
       </header>
 
       <section className="page-heading">
