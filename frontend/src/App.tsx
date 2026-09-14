@@ -3,6 +3,7 @@ import { ResumeDetailPage } from './pages/ResumeDetailPage'
 import { ResumeUploadPage } from './pages/ResumeUploadPage'
 import { KnowledgeBaseManagePage } from './pages/KnowledgeBaseManagePage'
 import { KnowledgeBaseUploadPage } from './pages/KnowledgeBaseUploadPage'
+import { KnowledgeBaseQueryPage } from './pages/KnowledgeBaseQueryPage'
 import { AppLayout } from './components/AppLayout'
 import { PAGE_ROUTES } from './constants/routes'
 import './App.css'
@@ -27,6 +28,7 @@ function App() {
         <Route path="/resumes/:resumeId" element={<ResumeDetailRoute />} />
         <Route path={PAGE_ROUTES.knowledgebase} element={<KnowledgeBaseManagePage />} />
         <Route path={PAGE_ROUTES.knowledgebaseUpload} element={<KnowledgeBaseUploadPage />} />
+        <Route path={PAGE_ROUTES.knowledgebaseQuery} element={<KnowledgeBaseQueryPage />} />
         <Route path="*" element={<Navigate to={PAGE_ROUTES.resumes} replace />} />
       </Route>
     </Routes>

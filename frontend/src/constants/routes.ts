@@ -3,6 +3,7 @@ export const PAGE_ROUTES = {
   resumeDetail: (id: number) => `/resumes/${id}`,
   knowledgebase: '/knowledgebase',
   knowledgebaseUpload: '/knowledgebase/upload',
+  knowledgebaseQuery: '/knowledgebase/query',
 } as const
 
 export const API_ROUTES = {
@@ -17,4 +18,6 @@ export const API_ROUTES = {
   knowledgebaseDetail: (id: number) => `/api/knowledgebase/${id}`,
   knowledgebaseDelete: (id: number) => `/api/knowledgebase/${id}`,
   knowledgebaseRevectorize: (id: number) => `/api/knowledgebase/${id}/revectorize`,
+  knowledgebaseQuery: '/api/knowledgebase/query',
+  knowledgebaseQueryStream: '/api/knowledgebase/query/stream',
 } as const

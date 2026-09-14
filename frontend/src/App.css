@@ -6,6 +6,81 @@
   box-sizing: border-box;
 }
 
+.kb-heading-actions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.rag-page { width: 100%; padding-bottom: 34px; }
+.rag-heading { padding-bottom: 27px; }
+.rag-workspace { display: grid; grid-template-columns: minmax(250px, .34fr) minmax(0, .66fr); gap: 18px; align-items: start; }
+.rag-source-panel, .rag-conversation { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 14px 35px rgba(22,32,31,.06); }
+.rag-source-panel { padding: 0; }
+.rag-source-panel .knowledge-selector { border: 0; box-shadow: none; }
+.rag-source-note { margin: 0 25px 22px; padding-top: 14px; color: var(--muted); border-top: 1px solid var(--line); font-size: 11px; line-height: 1.55; }
+.knowledge-selector-empty { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.rag-conversation { display: flex; min-height: min(720px, calc(100svh - 170px)); flex-direction: column; }
+.rag-conversation-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px; border-bottom: 1px solid var(--line); }
+.rag-conversation-header h2 { margin: 6px 0 0; color: var(--ink); font-size: 20px; }
+.rag-message-viewport { min-height: 360px; flex: 1; overflow-y: auto; padding: 25px 24px; scrollbar-width: thin; scrollbar-color: #9fb4aa transparent; }
+.rag-message-list { display: grid; gap: 23px; }
+.rag-message { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 11px; align-items: start; }
+.rag-message-user { grid-template-columns: minmax(0, 1fr) 30px; }
+.rag-message-avatar { width: 30px; height: 30px; display: grid; place-items: center; color: var(--teal); background: var(--teal-soft); border-radius: 6px; }
+.rag-message-user .rag-message-avatar { grid-column: 2; grid-row: 1; color: #fff; background: var(--ink); }
+.rag-message-body { min-width: 0; }
+.rag-message-user .rag-message-body { grid-column: 1; grid-row: 1; justify-self: end; max-width: min(78%, 670px); padding: 12px 15px; color: #fff; background: var(--ink); border-radius: 8px 8px 2px 8px; }
+.rag-message-user .rag-message-meta { display: none; }
+.rag-message-meta { display: flex; align-items: center; gap: 9px; min-height: 18px; margin-bottom: 7px; color: var(--muted); font-size: 11px; }
+.rag-message-meta strong { color: var(--ink); font-size: 12px; }
+.rag-message-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.rag-error-label { color: var(--coral); }
+.rag-markdown { min-width: 0; color: var(--ink); font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+.rag-message-user .rag-markdown { color: #fff; }
+.rag-markdown > :first-child { margin-top: 0; }
+.rag-markdown > :last-child { margin-bottom: 0; }
+.rag-markdown p { margin: 0 0 11px; }
+.rag-markdown h1, .rag-markdown h2, .rag-markdown h3 { margin: 18px 0 8px; color: var(--ink); font-size: 16px; }
+.rag-message-user .rag-markdown h1, .rag-message-user .rag-markdown h2, .rag-message-user .rag-markdown h3 { color: #fff; }
+.rag-markdown ul, .rag-markdown ol { margin: 7px 0 13px; padding-left: 21px; }
+.rag-markdown li { margin: 3px 0; }
+.rag-markdown blockquote { margin: 12px 0; padding: 6px 12px; color: var(--muted); border-left: 3px solid var(--teal); background: #f3f8f6; }
+.rag-markdown code { padding: 2px 5px; color: #8f362b; background: #fff0ed; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .9em; }
+.rag-markdown pre { max-width: 100%; margin: 13px 0; padding: 13px; overflow-x: auto; color: #e8f2ee; background: #1e2b29; border-radius: 6px; }
+.rag-markdown pre code { padding: 0; color: inherit; background: transparent; }
+.rag-markdown table { display: block; max-width: 100%; margin: 12px 0; overflow-x: auto; border-collapse: collapse; }
+.rag-markdown th, .rag-markdown td { padding: 7px 10px; text-align: left; border: 1px solid var(--line); }
+.rag-markdown th { background: var(--teal-soft); }
+.rag-message-user .rag-markdown code { color: #16201f; background: rgba(255,255,255,.85); }
+.rag-stream-placeholder { color: var(--muted); font-style: italic; }
+.rag-sources { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+.rag-sources-title { display: inline-flex; align-items: center; gap: 5px; color: var(--teal); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.rag-source-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+.rag-source-chip { display: inline-flex; max-width: 100%; flex-direction: column; gap: 2px; padding: 7px 9px; color: var(--ink); background: #f3f8f6; border: 1px solid var(--line); border-radius: 5px; font-size: 11px; }
+.rag-source-chip strong, .rag-source-chip small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rag-source-chip small { color: var(--muted); font-size: 10px; }
+.rag-empty-state { display: grid; min-height: 330px; place-items: center; align-content: center; gap: 9px; color: var(--muted); text-align: center; }
+.rag-empty-state strong { color: var(--ink); font-size: 16px; }
+.rag-empty-state p { max-width: 300px; margin: 0; font-size: 12px; line-height: 1.5; }
+.rag-empty-icon { width: 46px; height: 46px; display: grid; place-items: center; color: var(--teal); background: var(--teal-soft); border-radius: 8px; }
+.rag-composer { padding: 15px 18px 17px; border-top: 1px solid var(--line); }
+.rag-composer textarea { width: 100%; min-height: 78px; resize: vertical; padding: 12px 13px; color: var(--ink); background: #fbfdfc; border: 1px solid #b8c9c2; border-radius: 6px; outline: none; font-size: 13px; line-height: 1.55; }
+.rag-composer textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(31,117,107,.12); }
+.rag-composer textarea:disabled { cursor: not-allowed; opacity: .7; }
+.rag-composer-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 9px; color: var(--muted); font-size: 11px; }
+
+@media (max-width: 900px) {
+  .rag-workspace { grid-template-columns: 1fr; }
+  .rag-source-panel { order: 1; }
+  .rag-conversation { order: 0; min-height: 650px; }
+}
+
+@media (max-width: 560px) {
+  .kb-heading-actions { width: 100%; }
+  .kb-heading-actions .secondary-button, .kb-heading-actions .primary-button { flex: 1; }
+  .rag-heading .secondary-button { width: 100%; }
+  .rag-conversation-header { padding: 17px; }
+  .rag-message-viewport { padding: 20px 15px; }
+  .rag-message-user .rag-message-body { max-width: 88%; }
+  .rag-composer { padding: 12px; }
+}
+
 .topbar,
 .page-heading,
 .section-heading,

@@ -1,4 +1,4 @@
-import { BookOpen, FileText, LayoutDashboard, Menu, X } from 'lucide-react'
+import { BookOpen, FileText, LayoutDashboard, MessageSquareText, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { PAGE_ROUTES } from '../constants/routes'
@@ -19,6 +19,7 @@ export function AppLayout() {
       <nav className="app-nav">
         <NavLink to={PAGE_ROUTES.resumes} end className={({ isActive }) => isActive ? 'app-nav-link is-active' : 'app-nav-link'} onClick={closeMenu}><FileText size={16} /> Resumes</NavLink>
         <NavLink to={PAGE_ROUTES.knowledgebase} className={({ isActive }) => isActive ? 'app-nav-link is-active' : 'app-nav-link'} onClick={closeMenu}><BookOpen size={16} /> Knowledge base</NavLink>
+        <NavLink to={PAGE_ROUTES.knowledgebaseQuery} className={({ isActive }) => isActive ? 'app-nav-link is-active' : 'app-nav-link'} onClick={closeMenu}><MessageSquareText size={16} /> Ask knowledge</NavLink>
       </nav>
     </aside>
     <button className="app-nav-scrim" type="button" aria-label="Close navigation" onClick={closeMenu} />

@@ -1,4 +1,4 @@
-import { AlertCircle, LoaderCircle, Plus, RefreshCw } from 'lucide-react'
+import { AlertCircle, LoaderCircle, MessageSquareText, Plus, RefreshCw } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { deleteKnowledgeBase, revectorizeKnowledgeBase } from '../api/knowledgebase'
@@ -58,7 +58,7 @@ export function KnowledgeBaseManagePage() {
 
   return <>
     <main className="kb-page">
-      <div className="kb-heading"><div><p className="eyebrow">Knowledge operations</p><h1>Knowledge base</h1><p className="heading-copy">Keep interview material searchable, current, and ready for guided sessions.</p></div><Link className="primary-button" to={PAGE_ROUTES.knowledgebaseUpload}><Plus size={16} /> Upload document</Link></div>
+      <div className="kb-heading"><div><p className="eyebrow">Knowledge operations</p><h1>Knowledge base</h1><p className="heading-copy">Keep interview material searchable, current, and ready for guided sessions.</p></div><div className="kb-heading-actions"><Link className="secondary-button" to={PAGE_ROUTES.knowledgebaseQuery}><MessageSquareText size={16} /> Ask knowledge</Link><Link className="primary-button" to={PAGE_ROUTES.knowledgebaseUpload}><Plus size={16} /> Upload document</Link></div></div>
       <section className="kb-summary-grid" aria-label="Knowledge base summary"><div><span>Total sources</span><strong>{knowledgeBases.length}</strong></div><div><span>Ready for interview</span><strong>{readyCount}</strong></div><div><span>In progress</span><strong>{activeCount}</strong></div></section>
       {errorMessage && <div className="alert error-alert"><AlertCircle size={17} /><span>{errorMessage}</span></div>}
       {actionError && <div className="alert error-alert"><AlertCircle size={17} /><span>{actionError}</span></div>}

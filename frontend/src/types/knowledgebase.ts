@@ -32,3 +32,30 @@ export interface KnowledgeBaseUploadResponse {
   vectorStatus: VectorStatus
   duplicate: boolean
 }
+
+export interface KnowledgeBaseQueryRequest {
+  knowledgeBaseIds: number[]
+  question: string
+}
+
+export interface KnowledgeBaseQuerySource {
+  sourceName: string
+  sourceType: KnowledgeSourceType
+  score: number
+  chunkId: string
+}
+
+export interface KnowledgeBaseQueryResponse {
+  answer: string
+  sources: KnowledgeBaseQuerySource[]
+}
+
+export type RagMessageStatus = 'streaming' | 'complete' | 'error'
+
+export interface RagMessage {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  status: RagMessageStatus
+  sources: KnowledgeBaseQuerySource[]
+}
