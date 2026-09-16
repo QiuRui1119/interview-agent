@@ -6,6 +6,9 @@ public record RetrievedChunkDTO(
     String sourceKey,
     String sourceType,
     String category,
+    Integer chunkIndex,
+    Long knowledgeBaseId,
+    Integer version,
     String chunkId,
     Double score
 ) {
@@ -16,6 +19,6 @@ public record RetrievedChunkDTO(
       String category,
       String chunkId,
       Double score) {
-    this(content, sourceName, null, sourceType, category, chunkId, score);
+    this(content, sourceName, null, sourceType, category, null, null, null, chunkId, score);
   }
 }

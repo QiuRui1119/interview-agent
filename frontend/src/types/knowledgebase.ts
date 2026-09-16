@@ -36,11 +36,22 @@ export interface KnowledgeBaseUploadResponse {
 export interface KnowledgeBaseQueryRequest {
   knowledgeBaseIds: number[]
   question: string
+  history?: KnowledgeBaseQueryHistoryMessage[]
+}
+
+export interface KnowledgeBaseQueryHistoryMessage {
+  role: 'user' | 'assistant'
+  content: string
 }
 
 export interface KnowledgeBaseQuerySource {
   sourceName: string
   sourceType: KnowledgeSourceType
+  category: string | null
+  chunkIndex: number | null
+  sourceKey: string | null
+  knowledgeBaseId: number | null
+  version: number | null
   score: number
   chunkId: string
 }

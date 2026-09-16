@@ -73,6 +73,9 @@ public class KnowledgeRetrievalServiceImpl implements KnowledgeRetrievalService 
         metadataValue(metadata, "source_key"),
         metadataValue(metadata, "source_type"),
         metadataValue(metadata, "category"),
+        metadataInteger(metadata, "chunk_index"),
+        metadataLong(metadata, "kb_id"),
+        metadataInteger(metadata, "version"),
         document.getId(),
         document.getScore());
   }
@@ -80,6 +83,32 @@ public class KnowledgeRetrievalServiceImpl implements KnowledgeRetrievalService 
   private static String metadataValue(Map<String, Object> metadata, String key) {
     Object value = metadata.get(key);
     return value == null ? null : value.toString();
+  }
+
+  private static Integer metadataInteger(Map<String, Object> metadata, String key) {
+    Number value = metadataNumber(metadata, key);
+    return value == null ? null : value.intValue();
+  }
+
+  private static Long metadataLong(Map<String, Object> metadata, String key) {
+    Number value = metadataNumber(metadata, key);
+    return value == null ? null : value.longValue();
+  }
+
+  private static Number metadataNumber(Map<String, Object> metadata, String key) {
+    Object value = metadata.get(key);
+    if (value == null || value.toString().isBlank()) {
+      return null;
+    }
+    if (value instanceof Number number) {
+      return number;
+    }
+    try {
+      return Long.parseLong(value.toString());
+    } catch (NumberFormatException ex) {
+      log.warn("Ignoring invalid numeric vector metadata: key={}, value={}", key, value);
+      return null;
+    }
   }
 
   private static void validateRequest(RetrievalRequest request) {

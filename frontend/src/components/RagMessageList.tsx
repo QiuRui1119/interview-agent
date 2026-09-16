@@ -41,9 +41,13 @@ export function RagMessageList({ messages }: RagMessageListProps) {
           {message.sources.length > 0 && <div className="rag-sources">
             <span className="rag-sources-title"><BookOpen size={13} /> Sources</span>
             <div className="rag-source-list">
-              {message.sources.map((source) => <span className="rag-source-chip" key={`${source.chunkId}-${source.sourceName}`} title={`Chunk ${source.chunkId}`}>
+              {message.sources.map((source) => <span
+                className="rag-source-chip"
+                key={`${source.chunkId}-${source.sourceName}`}
+                title={`${source.category ?? 'Uncategorized'} · Chunk ${source.chunkIndex ?? source.chunkId} · KB ${source.knowledgeBaseId ?? '-'} · v${source.version ?? '-'}`}
+              >
                 <strong>{source.sourceName}</strong>
-                <small>{source.sourceType === 'BUILT_IN' ? 'System' : 'Uploaded'} · {Math.round(source.score * 100)}%</small>
+                <small>{source.sourceType === 'BUILT_IN' ? 'System' : 'Uploaded'} · {source.category ?? 'Uncategorized'} · {Math.round(source.score * 100)}%</small>
               </span>)}
             </div>
           </div>}

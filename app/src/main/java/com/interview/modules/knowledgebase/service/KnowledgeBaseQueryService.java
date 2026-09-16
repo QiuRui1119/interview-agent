@@ -9,6 +9,7 @@ import com.interview.infrastructure.ai.LlmProviderRegistry;
 import com.interview.infrastructure.ai.PromptSanitizer;
 import com.interview.modules.knowledgebase.model.KnowledgeBaseEntity;
 import com.interview.modules.knowledgebase.model.KnowledgeBaseQueryRequest;
+import com.interview.modules.knowledgebase.model.KnowledgeBaseQueryHistoryMessage;
 import com.interview.modules.knowledgebase.model.KnowledgeBaseQueryResponse;
 import com.interview.modules.knowledgebase.model.KnowledgeBaseQuerySourceDTO;
 import com.interview.modules.knowledgebase.model.RetrievalRequest;
@@ -23,6 +24,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.http.codec.ServerSentEvent;
 import org.slf4j.Logger;
@@ -41,6 +45,7 @@ public class KnowledgeBaseQueryService {
   private static final String NO_RELEVANT_INFORMATION = "知识库中没有相关信息";
   private final KnowledgeBaseRepository knowledgeBaseRepository;
   private final KnowledgeRetrievalService knowledgeRetrievalService;
+  private final QueryRewriteService queryRewriteService;
   private final LlmProviderRegistry llmProviderRegistry;
   private final ObjectMapper objectMapper;
   private final PromptSanitizer promptSanitizer;
@@ -50,6 +55,7 @@ public class KnowledgeBaseQueryService {
   public KnowledgeBaseQueryService(
       KnowledgeBaseRepository knowledgeBaseRepository,
       KnowledgeRetrievalService knowledgeRetrievalService,
+      QueryRewriteService queryRewriteService,
       LlmProviderRegistry llmProviderRegistry,
       ObjectMapper objectMapper,
       PromptSanitizer promptSanitizer,
@@ -57,6 +63,7 @@ public class KnowledgeBaseQueryService {
   ) throws IOException {
     this.knowledgeBaseRepository = knowledgeBaseRepository;
     this.knowledgeRetrievalService = knowledgeRetrievalService;
+    this.queryRewriteService = queryRewriteService;
     this.llmProviderRegistry = llmProviderRegistry;
     this.objectMapper = objectMapper;
     this.promptSanitizer = promptSanitizer;
@@ -130,16 +137,45 @@ public class KnowledgeBaseQueryService {
     List<Long> knowledgeBaseIds = validateAndNormalize(request);
     validateKnowledgeBases(knowledgeBaseIds);
     String question = promptSanitizer.sanitize(request.question());
-    List<RetrievedChunkDTO> chunks = knowledgeRetrievalService.retrieve(
-        new RetrievalRequest(
-            question,
-            knowledgeBaseIds,
-            DEFAULT_TOP_K,
-            DEFAULT_MIN_SCORE));
+    List<RetrievedChunkDTO> originalChunks = retrieve(question, knowledgeBaseIds);
+    List<Message> history = toMessages(request.history());
+    List<RetrievedChunkDTO> chunks = originalChunks;
+    String answerQuestion = question;
+    if (queryRewriteService.shouldRewrite(question, history, originalChunks.isEmpty())) {
+      String rewrittenQuestion = queryRewriteService.rewrite(question, history);
+      answerQuestion=rewrittenQuestion;
+      if (!rewrittenQuestion.equals(question)) {
+        List<RetrievedChunkDTO> rewrittenChunks = retrieve(rewrittenQuestion, knowledgeBaseIds);
+        chunks = RetrievedChunkMerger.merge(rewrittenChunks, originalChunks, DEFAULT_TOP_K);
+        log.info("RAG query rewrite applied: originalResults={}, rewrittenResults={}, mergedResults={}",
+            originalChunks.size(), rewrittenChunks.size(), chunks.size());
+      }
+    }
     return new PreparedQuery(
         chunks,
         systemPromptTemplate.render(),
-        buildUserPrompt(question, chunks));
+        buildUserPrompt(answerQuestion, chunks));
+  }
+
+  private List<RetrievedChunkDTO> retrieve(String query, List<Long> knowledgeBaseIds) {
+    return knowledgeRetrievalService.retrieve(new RetrievalRequest(
+        query, knowledgeBaseIds, DEFAULT_TOP_K, DEFAULT_MIN_SCORE));
+  }
+
+  private static List<Message> toMessages(List<KnowledgeBaseQueryHistoryMessage> history) {
+    if (history == null || history.isEmpty()) {
+      return List.of();
+    }
+    return history.stream()
+        .filter(message -> message != null && message.content() != null
+            && !message.content().isBlank())
+        .filter(message -> "user".equalsIgnoreCase(message.role())
+            || "assistant".equalsIgnoreCase(message.role()))
+        .map(message -> "assistant".equalsIgnoreCase(message.role())
+            ? new AssistantMessage(message.content())
+            : new UserMessage(message.content()))
+        .map(message -> (Message) message)
+        .toList();
   }
 
   private List<Long> validateAndNormalize(KnowledgeBaseQueryRequest request) {
@@ -202,8 +238,12 @@ public class KnowledgeBaseQueryService {
     return chunks.stream()
         .map(chunk -> new KnowledgeBaseQuerySourceDTO(
             chunk.sourceName(),
-            chunk.sourceKey(),
             chunk.sourceType(),
+            chunk.category(),
+            chunk.chunkIndex(),
+            chunk.sourceKey(),
+            chunk.knowledgeBaseId(),
+            chunk.version(),
             chunk.score(),
             chunk.chunkId()))
         .toList();

@@ -93,9 +93,16 @@ export function KnowledgeBaseQueryPage() {
     controllerRef.current = controller
     let completionReceived = false
     let streamFailed = false
+    const history = messages
+      .filter((message) => message.status === 'complete' && message.content.trim())
+      .map((message) => ({ role: message.role, content: message.content }))
 
     try {
-      await streamKnowledgeBaseQuery({ knowledgeBaseIds: selectedIds, question: normalizedQuestion }, {
+      await streamKnowledgeBaseQuery({
+        knowledgeBaseIds: selectedIds,
+        question: normalizedQuestion,
+        history,
+      }, {
         onText: (text) => updateAssistant(assistantId, (message) => ({
           ...message,
           content: message.content + text,

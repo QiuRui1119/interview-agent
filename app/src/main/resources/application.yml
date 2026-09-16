@@ -42,6 +42,12 @@ spring:
         remove-existing-vector-store-table: false
 
 app:
+  rag:
+    rewrite:
+      enabled: true
+      max-history-chars: 1200
+      max-question-chars: 300
+      timeout-seconds: 10
   storage:
     endpoint: ${APP_STORAGE_ENDPOINT}
     access-key: ${APP_STORAGE_ACCESS_KEY}
