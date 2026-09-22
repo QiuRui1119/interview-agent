@@ -32,6 +32,7 @@ public enum ErrorCode {
     INTERVIEW_QUESTION_GENERATION_FAILED(3006, "面试问题生成失败"),
     INTERVIEW_NOT_COMPLETED(3007, "面试尚未完成"),
     INTERVIEW_ANSWER_SAVE_FAILED(3008, "面试答案保存失败"),
+    INVALID_INTERVIEW_STATE_TRANSITION(3009, "非法的面试状态转换"),
     
     // ========== 存储模块错误 4xxx ==========
     STORAGE_UPLOAD_FAILED(4001, "文件上传失败"),
