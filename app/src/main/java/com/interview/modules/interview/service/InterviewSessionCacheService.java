@@ -41,7 +41,7 @@ public class InterviewSessionCacheService {
         delete(cache.sessionId());
         return;
       }
-      redisService.set(key(cache.sessionId()), writeJson(cache), ttl(cache.status()));
+      redisService.setString(key(cache.sessionId()), writeJson(cache), ttl(cache.status()));
     } catch (Exception ex) {
       log.warn("Failed to write interview session cache: sessionId={}", cache.sessionId(), ex);
     }
@@ -52,7 +52,7 @@ public class InterviewSessionCacheService {
       return null;
     }
     try {
-      String json = redisService.get(key(sessionId));
+      String json = redisService.getString(key(sessionId));
       return json == null ? null : readJson(json);
     } catch (Exception ex) {
       log.warn("Failed to read interview session cache: sessionId={}", sessionId, ex);

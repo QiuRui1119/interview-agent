@@ -23,7 +23,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.ApplicationEventPublisher;
 import com.interview.modules.interview.model.InterviewSessionCacheRefreshEvent;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InterviewAnswerDecisionService {
@@ -81,8 +83,21 @@ public class InterviewAnswerDecisionService {
       throw new BusinessException(ErrorCode.BAD_REQUEST, "Answer decision was already persisted");
     }
     String action = normalizeAction(decision.action());
-    current.recordDecision(toJson(decision));
+    if ("FOLLOW_UP".equals(action)
+        && current.getTopic().getFollowUpCount() >= current.getTopic().getMaxFollowUps()) {
+      action = "NEXT_TOPIC";
+    }
+    current.recordDecision(toJson(new DecisionResult(action, decision.coverageScore(),
+        decision.coveredPoints(), decision.missingPoints(), decision.nextQuestion())));
     InterviewTopicEntity topic = current.getTopic();
+    log.info("Interview answer decision: sessionId={}, turnId={}, action={}, topicOrder={}, "
+            + "followUpCount={}, maxFollowUps={}", sessionId, turnId, action,
+        topic.getTopicOrder(), topic.getFollowUpCount(), topic.getMaxFollowUps());
+    if (topic.getStatus() == InterviewTopicStatus.PENDING
+        && current.getId().equals(session.getCurrentTurnId())
+        && topic.getTopicOrder().equals(session.getCurrentTopicOrder())) {
+      topic.transitionTo(InterviewTopicStatus.ACTIVE);
+    }
     Long nextTurnId = null;
     if ("FOLLOW_UP".equals(action) && topic.getFollowUpCount() < topic.getMaxFollowUps()) {
       topic.incrementFollowUpCount();
@@ -92,19 +107,7 @@ public class InterviewAnswerDecisionService {
       nextTurnId = turnRepository.save(next).getId();
       session.moveToTurn(nextTurnId, topic.getTopicOrder());
     } else if ("NEXT_TOPIC".equals(action)) {
-      topic.complete();
-      var nextTopic = topicRepository.findBySession_SessionIdAndTopicOrder(
-          sessionId, topic.getTopicOrder() + 1);
-      if (nextTopic.isPresent() && session.getTotalTurns() < session.getMaxTurns()) {
-        nextTopic.get().transitionTo(InterviewTopicStatus.ACTIVE);
-        InterviewTurnEntity next = InterviewTurnEntity.create(nextTopic.get(),
-            session.getTotalTurns(), nextTopic.get().getBaseQuestion());
-        next.transitionTo(InterviewTurnStatus.ANSWER_PENDING);
-        nextTurnId = turnRepository.save(next).getId();
-        session.moveToTurn(nextTurnId, nextTopic.get().getTopicOrder());
-      } else {
-        session.complete();
-      }
+      nextTurnId = moveToNextTopic(sessionId, session, topic);
     } else {
       topic.complete();
       session.complete();
@@ -114,6 +117,24 @@ public class InterviewAnswerDecisionService {
     eventPublisher.publishEvent(new InterviewSessionCacheRefreshEvent(sessionId));
     return new InterviewAnswerResponse(requestId, action, nextTurnId,
         current.getStatus(), session.getStatus());
+  }
+
+  private Long moveToNextTopic(String sessionId, InterviewSessionEntity session,
+      InterviewTopicEntity topic) {
+    topic.complete();
+    var nextTopic = topicRepository.findBySession_SessionIdAndTopicOrder(
+        sessionId, topic.getTopicOrder() + 1);
+    if (nextTopic.isEmpty() || session.getTotalTurns() >= session.getMaxTurns()) {
+      session.complete();
+      return null;
+    }
+    nextTopic.get().transitionTo(InterviewTopicStatus.ACTIVE);
+    InterviewTurnEntity next = InterviewTurnEntity.create(nextTopic.get(),
+        session.getTotalTurns(), nextTopic.get().getBaseQuestion());
+    next.transitionTo(InterviewTurnStatus.ANSWER_PENDING);
+    Long nextTurnId = turnRepository.save(next).getId();
+    session.moveToTurn(nextTurnId, nextTopic.get().getTopicOrder());
+    return nextTurnId;
   }
 
   @Transactional(readOnly = true)

@@ -57,6 +57,14 @@ public class RedisService {
         RBucket<T> bucket = redissonClient.getBucket(key);
         return bucket.get();
     }
+
+    public void setString(String key, String value, Duration ttl) {
+        redissonClient.<String>getBucket(key, StringCodec.INSTANCE).set(value, ttl);
+    }
+
+    public String getString(String key) {
+        return redissonClient.<String>getBucket(key, StringCodec.INSTANCE).get();
+    }
     
     /**
      * 获取值，如果不存在则使用 loader 加载并缓存

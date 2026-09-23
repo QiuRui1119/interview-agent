@@ -4,6 +4,10 @@ export const PAGE_ROUTES = {
   knowledgebase: '/knowledgebase',
   knowledgebaseUpload: '/knowledgebase/upload',
   knowledgebaseQuery: '/knowledgebase/query',
+  interviews: '/interviews',
+  interviewsNew: '/interviews/new',
+  interviewLoading: (id: string) => `/interviews/${id}/loading`,
+  interview: (id: string) => `/interviews/${id}`,
 } as const
 
 export const API_ROUTES = {
@@ -20,4 +24,7 @@ export const API_ROUTES = {
   knowledgebaseRevectorize: (id: number) => `/api/knowledgebase/${id}/revectorize`,
   knowledgebaseQuery: '/api/knowledgebase/query',
   knowledgebaseQueryStream: '/api/knowledgebase/query/stream',
+  interviewCreate: '/api/interview/sessions',
+  interviewResume: (id: string) => `/api/interview/sessions/${id}/resume`,
+  interviewAnswer: (sessionId: string, turnId: number) => `/api/interview/sessions/${sessionId}/turns/${turnId}/answer`,
 } as const

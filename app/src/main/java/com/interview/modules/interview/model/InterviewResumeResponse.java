@@ -8,6 +8,7 @@ public record InterviewResumeResponse(
     Integer currentTopicOrder,
     Integer completedTopicCount,
     Integer totalTurns,
+    String generationStatus,
     InterviewTurnCache currentTurn,
     List<InterviewRecentTurnCache> recentTurns
 ) {}

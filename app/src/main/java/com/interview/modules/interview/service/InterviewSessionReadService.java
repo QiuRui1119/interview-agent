@@ -55,6 +55,7 @@ public class InterviewSessionReadService {
         session.getCurrentTopicOrder(),
         session.getTotalTurns(),
         session.getStatus(),
+        session.getGenerationStatus(),
         session.getVersion(),
         Instant.now(),
         Math.toIntExact(topicRepository.countBySession_SessionIdAndStatus(

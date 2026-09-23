@@ -5,6 +5,7 @@ import com.interview.common.exception.ErrorCode;
 import com.interview.modules.interview.model.InterviewSessionEntity;
 import com.interview.modules.interview.model.InterviewSessionStatus;
 import com.interview.modules.interview.model.InterviewTopicEntity;
+import com.interview.modules.interview.model.InterviewTopicStatus;
 import com.interview.modules.interview.model.InterviewTopicEvidenceEntity;
 import com.interview.modules.interview.model.InterviewTurnEntity;
 import com.interview.modules.interview.model.InterviewTurnStatus;
@@ -38,6 +39,9 @@ public class InterviewGenerationPersistenceService {
           session, data.category(), data.topicName(), index);
       topic.applyGeneratedContent(data.objective(), data.retrievalQuery(), data.baseQuestion(),
           data.fallbackFollowUp(), data.referenceAnswer(), data.scoringPointsJson(), 1);
+      if (index == 0) {
+        topic.transitionTo(InterviewTopicStatus.ACTIVE);
+      }
       topic = topicRepository.save(topic);
       for (RetrievedChunkDTO chunk : data.evidence()) {
         evidenceRepository.save(InterviewTopicEvidenceEntity.create(topic,

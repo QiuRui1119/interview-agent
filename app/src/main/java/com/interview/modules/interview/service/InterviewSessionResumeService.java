@@ -76,6 +76,7 @@ public class InterviewSessionResumeService {
         .toList();
     return new InterviewResumeResponse(cache.sessionId(), cache.status(),
         cache.currentTopicOrder(), cache.completedTopicCount(), cache.totalTurns(),
+        cache.generationStatus(),
         cache.currentTurn(), recent);
   }
 

@@ -5,6 +5,10 @@ import { KnowledgeBaseManagePage } from './pages/KnowledgeBaseManagePage'
 import { KnowledgeBaseUploadPage } from './pages/KnowledgeBaseUploadPage'
 import { KnowledgeBaseQueryPage } from './pages/KnowledgeBaseQueryPage'
 import { AppLayout } from './components/AppLayout'
+import { InterviewNewPage } from './pages/InterviewNewPage'
+import { InterviewLoadingPage } from './pages/InterviewLoadingPage'
+import { InterviewPage } from './pages/InterviewPage'
+import { InterviewsPage } from './pages/InterviewsPage'
 import { PAGE_ROUTES } from './constants/routes'
 import './App.css'
 
@@ -29,6 +33,10 @@ function App() {
         <Route path={PAGE_ROUTES.knowledgebase} element={<KnowledgeBaseManagePage />} />
         <Route path={PAGE_ROUTES.knowledgebaseUpload} element={<KnowledgeBaseUploadPage />} />
         <Route path={PAGE_ROUTES.knowledgebaseQuery} element={<KnowledgeBaseQueryPage />} />
+        <Route path={PAGE_ROUTES.interviews} element={<InterviewsPage />} />
+        <Route path={PAGE_ROUTES.interviewsNew} element={<InterviewNewPage />} />
+        <Route path="/interviews/:sessionId/loading" element={<InterviewLoadingPage />} />
+        <Route path="/interviews/:sessionId" element={<InterviewPage />} />
         <Route path="*" element={<Navigate to={PAGE_ROUTES.resumes} replace />} />
       </Route>
     </Routes>

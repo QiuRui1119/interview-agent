@@ -9,6 +9,7 @@ public record InterviewSessionCache(
     Integer currentTopicOrder,
     Integer totalTurns,
     InterviewSessionStatus status,
+    String generationStatus,
     Long version,
     Instant cachedAt,
     Integer completedTopicCount,
