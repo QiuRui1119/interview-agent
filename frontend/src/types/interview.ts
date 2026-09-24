@@ -1,12 +1,7 @@
 export const INTERVIEW_SESSION_STATUS = {
   CREATED: 'CREATED',
-  GENERATING: 'GENERATING',
-  READY: 'READY',
   IN_PROGRESS: 'IN_PROGRESS',
   COMPLETED: 'COMPLETED',
-  EVALUATED: 'EVALUATED',
-  GENERATION_FAILED: 'GENERATION_FAILED',
-  EVALUATION_FAILED: 'EVALUATION_FAILED',
   ABORTED: 'ABORTED',
 } as const
 
@@ -33,6 +28,7 @@ export type InterviewTurnStatus =
   typeof INTERVIEW_TURN_STATUS[keyof typeof INTERVIEW_TURN_STATUS]
 
 export type InterviewGenerationStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'
+export type InterviewEvaluationStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'
 
 export const INTERVIEW_SESSION_STATUS_VALUES = Object.values(INTERVIEW_SESSION_STATUS)
 export const INTERVIEW_TOPIC_STATUS_VALUES = Object.values(INTERVIEW_TOPIC_STATUS)
@@ -60,6 +56,8 @@ export interface InterviewResumeResponse {
   sessionId: string
   status: InterviewSessionStatus
   generationStatus: InterviewGenerationStatus | null
+  evaluateStatus: InterviewEvaluationStatus | null
+  evaluateError: string | null
   currentTopicOrder: number | null
   completedTopicCount: number
   totalTurns: number
@@ -73,4 +71,59 @@ export interface InterviewAnswerResponse {
   nextTurnId: number | null
   turnStatus: InterviewTurnStatus
   sessionStatus: InterviewSessionStatus
+}
+
+export interface InterviewTopicScore {
+  topicId: number
+  topicOrder: number
+  topicName: string
+  score: number
+  feedback: string
+  coveredPoints: string[]
+  missingPoints: string[]
+}
+
+export interface InterviewTurnEvaluation {
+  turnId: number
+  turnOrder: number
+  topicId: number
+  question: string
+  answer: string
+  turnType: string
+  parentTurnId: number | null
+  score: number
+  coveredPoints: string[]
+  missingPoints: string[]
+  feedback: string
+}
+
+export interface InterviewSessionListItem {
+  sessionId: string
+  resumeId: number
+  resumeFilename: string | null
+  skillId: string
+  difficulty: string
+  status: InterviewSessionStatus
+  generationStatus: InterviewGenerationStatus
+  evaluateStatus: InterviewEvaluationStatus | null
+  overallScore: number | null
+  createdAt: string
+  completedAt: string | null
+}
+
+export interface InterviewReport {
+  sessionId: string
+  overallScore: number
+  overallFeedback: string
+  strengths: string[]
+  improvements: string[]
+  topicScores: InterviewTopicScore[]
+  turnEvaluations: InterviewTurnEvaluation[]
+  evaluatedAt: string
+}
+
+export interface InterviewReportStatusResponse {
+  status: InterviewEvaluationStatus
+  error: string | null
+  report: InterviewReport | null
 }

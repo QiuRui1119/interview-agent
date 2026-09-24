@@ -9,6 +9,7 @@ import { InterviewNewPage } from './pages/InterviewNewPage'
 import { InterviewLoadingPage } from './pages/InterviewLoadingPage'
 import { InterviewPage } from './pages/InterviewPage'
 import { InterviewsPage } from './pages/InterviewsPage'
+import { InterviewReportPage } from './pages/InterviewReportPage'
 import { PAGE_ROUTES } from './constants/routes'
 import './App.css'
 
@@ -36,6 +37,7 @@ function App() {
         <Route path={PAGE_ROUTES.interviews} element={<InterviewsPage />} />
         <Route path={PAGE_ROUTES.interviewsNew} element={<InterviewNewPage />} />
         <Route path="/interviews/:sessionId/loading" element={<InterviewLoadingPage />} />
+        <Route path="/interviews/:sessionId/report" element={<InterviewReportPage />} />
         <Route path="/interviews/:sessionId" element={<InterviewPage />} />
         <Route path="*" element={<Navigate to={PAGE_ROUTES.resumes} replace />} />
       </Route>

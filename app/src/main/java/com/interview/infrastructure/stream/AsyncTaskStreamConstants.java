@@ -13,6 +13,9 @@ public final class AsyncTaskStreamConstants {
   public static final String INTERVIEW_GENERATION_STREAM_KEY = "interview:generation:tasks";
   public static final String INTERVIEW_GENERATION_GROUP = "interview-generation-workers";
   public static final String FIELD_INTERVIEW_SESSION_ID = "sessionId";
+  public static final String INTERVIEW_EVALUATION_STREAM_KEY = "interview:evaluation:tasks";
+  public static final String INTERVIEW_EVALUATION_GROUP = "interview-evaluation-workers";
+  public static final String FIELD_RETRY_COUNT = "retryCount";
   public static final int STREAM_MAX_LEN=1000;
   
   private AsyncTaskStreamConstants() {

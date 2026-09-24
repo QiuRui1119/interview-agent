@@ -1,5 +1,6 @@
 package com.interview.modules.interview.model;
 
+import com.interview.common.model.AsyncTaskStatus;
 import java.time.Instant;
 import java.util.List;
 
@@ -9,7 +10,9 @@ public record InterviewSessionCache(
     Integer currentTopicOrder,
     Integer totalTurns,
     InterviewSessionStatus status,
-    String generationStatus,
+    AsyncTaskStatus generationStatus,
+    AsyncTaskStatus evaluateStatus,
+    String evaluateError,
     Long version,
     Instant cachedAt,
     Integer completedTopicCount,

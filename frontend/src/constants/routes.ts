@@ -8,6 +8,7 @@ export const PAGE_ROUTES = {
   interviewsNew: '/interviews/new',
   interviewLoading: (id: string) => `/interviews/${id}/loading`,
   interview: (id: string) => `/interviews/${id}`,
+  interviewReport: (id: string) => `/interviews/${id}/report`,
 } as const
 
 export const API_ROUTES = {
@@ -25,6 +26,9 @@ export const API_ROUTES = {
   knowledgebaseQuery: '/api/knowledgebase/query',
   knowledgebaseQueryStream: '/api/knowledgebase/query/stream',
   interviewCreate: '/api/interview/sessions',
+  interviewList: '/api/interview/sessions',
   interviewResume: (id: string) => `/api/interview/sessions/${id}/resume`,
+  interviewReport: (id: string) => `/api/interview/sessions/${id}/report`,
+  interviewEvaluationRetry: (id: string) => `/api/interview/sessions/${id}/evaluation/retry`,
   interviewAnswer: (sessionId: string, turnId: number) => `/api/interview/sessions/${sessionId}/turns/${turnId}/answer`,
 } as const

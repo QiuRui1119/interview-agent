@@ -42,6 +42,13 @@ spring:
         remove-existing-vector-store-table: false
 
 app:
+  interview:
+    evaluation:
+      system-prompt-path: classpath:prompts/interview-evaluation-system.st
+      user-prompt-path: classpath:prompts/interview-evaluation-user.st
+      max-evidence-per-topic: 3
+      max-evidence-chars: 1800
+      max-prompt-chars: 30000
   rag:
     rewrite:
       enabled: true

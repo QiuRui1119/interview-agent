@@ -1,10 +1,11 @@
-import { AlertCircle, CheckCircle2, LoaderCircle, Send } from 'lucide-react'
+import { AlertCircle, CheckCircle2, LoaderCircle, RotateCcw, Send } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { submitInterviewAnswer } from '../api/interview'
+import { retryInterviewEvaluation, submitInterviewAnswer } from '../api/interview'
 import { LAST_INTERVIEW_SESSION_KEY } from '../constants/interview'
 import { PAGE_ROUTES } from '../constants/routes'
 import { useInterviewResume } from '../hooks/useInterviewResume'
+import { useInterviewReport } from '../hooks/useInterviewReport'
 import type { InterviewSessionStatus } from '../types/interview'
 
 const PENDING_ANSWER_PREFIX = 'interview:pending-answer:'
@@ -53,6 +54,7 @@ export function InterviewPage() {
   const [waitingTurnId, setWaitingTurnId] = useState<number | null>(null)
   const [finishedStatus, setFinishedStatus] = useState<InterviewSessionStatus | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isRetryingEvaluation, setIsRetryingEvaluation] = useState(false)
   const requestRef = useRef<PendingAnswer | null>(null)
   const submittingRef = useRef(false)
   const activeSessionRef = useRef(sessionId)
@@ -74,13 +76,15 @@ export function InterviewPage() {
 
   const currentTurn = data?.currentTurn ?? null
   const displayedStatus = finishedStatus ?? data?.status
-  const isComplete = displayedStatus === 'COMPLETED' || displayedStatus === 'EVALUATED'
-    || displayedStatus === 'EVALUATION_FAILED'
+  const isComplete = displayedStatus === 'COMPLETED'
   const isDeciding = isSubmitting || currentTurn?.status === 'DECIDING'
     || (currentTurn?.status === 'ANSWER_PENDING' && currentTurn.answer !== null)
     || (waitingTurnId !== null && currentTurn?.id === waitingTurnId)
   const canAnswer = !isComplete && !isDeciding && currentTurn?.status === 'ANSWER_PENDING'
-    && currentTurn.answer === null && (data?.status === 'READY' || data?.status === 'IN_PROGRESS')
+    && currentTurn.answer === null && data?.status === 'IN_PROGRESS'
+  const { data: reportState, error: reportError, refresh: refreshReport } = useInterviewReport(sessionId, isComplete)
+  const evaluationStatus = reportState?.status ?? data?.evaluateStatus
+  const evaluationError = reportState?.error ?? data?.evaluateError
 
   useEffect(() => {
     if (waitingTurnId !== null && (isComplete || (currentTurn && currentTurn.id !== waitingTurnId))) {
@@ -120,9 +124,8 @@ export function InterviewPage() {
       const response = await submitInterviewAnswer(sessionId, turnId,
         request.pendingRequestId, request.answer ?? answer.trim())
       if (activeSessionRef.current !== sessionId) return
-      if (response.action === 'END' || response.sessionStatus === 'COMPLETED'
-        || response.sessionStatus === 'EVALUATED') {
-        setFinishedStatus(response.sessionStatus === 'EVALUATED' ? 'EVALUATED' : 'COMPLETED')
+      if (response.action === 'END' || response.sessionStatus === 'COMPLETED') {
+        setFinishedStatus('COMPLETED')
         setWaitingTurnId(null)
       }
       switch (response.action) {
@@ -152,6 +155,20 @@ export function InterviewPage() {
     }
   }
 
+  const retryEvaluation = async () => {
+    if (isRetryingEvaluation) return
+    setIsRetryingEvaluation(true)
+    setSubmitError(null)
+    try {
+      await retryInterviewEvaluation(sessionId)
+      await refreshReport()
+    } catch (requestError) {
+      setSubmitError(requestError instanceof Error ? requestError.message : 'Evaluation retry failed.')
+    } finally {
+      setIsRetryingEvaluation(false)
+    }
+  }
+
   if (isLoading && !data) return <main className="interview-page"><div className="loading-state"><LoaderCircle className="spin" size={18} /> Restoring interview...</div></main>
   if (error && !data) return <main className="interview-page"><div className="alert error-alert"><AlertCircle size={17} /> {error}</div></main>
   if (!data) return null
@@ -160,7 +177,7 @@ export function InterviewPage() {
     <header className="interview-heading"><div><p className="eyebrow">Live interview</p><h1>Technical interview</h1><div className="interview-progress"><span>Topic {data.currentTopicOrder === null ? '--' : data.currentTopicOrder + 1} / {TOPIC_COUNT}</span><span>{data.completedTopicCount} topics completed</span><span>Turn {data.totalTurns} / {MAX_TURNS}</span></div></div><span className={`interview-status interview-status-${displayedStatus?.toLowerCase()}`}>{displayedStatus}</span></header>
     {submitError && <div className="alert error-alert"><AlertCircle size={17} /> {submitError}</div>}
     {isComplete
-      ? <section className="interview-complete-card"><CheckCircle2 size={26} /><h2>面试已完成</h2><p>答案已保存</p><p>{displayedStatus === 'EVALUATION_FAILED' ? '评估失败，报告暂不可用' : '评估报告正在生成'}</p></section>
+      ? <section className="interview-complete-card"><CheckCircle2 size={26} /><h2>面试已完成</h2><p>答案已保存</p><p>{reportError ? `评估状态查询失败：${reportError}` : evaluationStatus === 'FAILED' ? (evaluationError ?? '评估失败，报告暂不可用') : evaluationStatus === 'COMPLETED' ? `评估报告已生成，综合评分 ${reportState?.report?.overallScore ?? '--'}` : '评估报告正在生成'}</p><div className="interview-complete-actions">{evaluationStatus === 'FAILED' ? <button className="primary-button" type="button" disabled={isRetryingEvaluation} onClick={() => void retryEvaluation()}>{isRetryingEvaluation ? <><LoaderCircle className="spin" size={16} /> 重试中...</> : <><RotateCcw size={16} /> 重试评估</>}</button> : <Link className="primary-button" to={PAGE_ROUTES.interviewReport(sessionId)}>{evaluationStatus === 'COMPLETED' ? '查看报告' : '查看评估进度'}</Link>}</div></section>
       : <div className="interview-layout">
           <section className="interview-panel interview-question-panel">
             <div className="interview-question-meta"><span>Topic {data.currentTopicOrder === null ? '--' : data.currentTopicOrder + 1}</span><span>{currentTurn?.turnType ?? 'BASE'}</span></div>

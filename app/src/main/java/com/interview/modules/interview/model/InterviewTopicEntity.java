@@ -60,6 +60,9 @@ public class InterviewTopicEntity {
   @Column(name = "scoring_points_json", columnDefinition = "TEXT")
   private String scoringPointsJson;
 
+  @Column(name = "evidence_snapshot_json", nullable = false, columnDefinition = "TEXT")
+  private String evidenceSnapshotJson = "[]";
+
   @Column(name = "follow_up_count", nullable = false)
   private Integer followUpCount = 0;
 
@@ -107,13 +110,14 @@ public class InterviewTopicEntity {
 
   public void applyGeneratedContent(String objective, String retrievalQuery,
       String baseQuestion, String fallbackFollowUp, String referenceAnswer,
-      String scoringPointsJson, int maxFollowUps) {
+      String scoringPointsJson, String evidenceSnapshotJson, int maxFollowUps) {
     this.objective = objective;
     this.retrievalQuery = retrievalQuery;
     this.baseQuestion = baseQuestion;
     this.fallbackFollowUp = fallbackFollowUp;
     this.referenceAnswer = referenceAnswer;
     this.scoringPointsJson = scoringPointsJson;
+    this.evidenceSnapshotJson = evidenceSnapshotJson == null ? "[]" : evidenceSnapshotJson;
     this.maxFollowUps = maxFollowUps;
   }
 

@@ -1,5 +1,6 @@
 package com.interview.modules.interview.model;
 
+import com.interview.common.model.AsyncTaskStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -67,17 +68,28 @@ public class InterviewSessionEntity {
   @Column(name = "status_reason", length = 1000)
   private String statusReason;
 
+  @Enumerated(EnumType.STRING)
   @Column(name = "generation_status", length = 30)
-  private String generationStatus = "PENDING";
+  private AsyncTaskStatus generationStatus = AsyncTaskStatus.PENDING;
 
   @Column(name = "generation_error", length = 1000)
   private String generationError;
 
+  @Enumerated(EnumType.STRING)
   @Column(name = "evaluate_status", length = 30)
-  private String evaluateStatus;
+  private AsyncTaskStatus evaluateStatus;
 
   @Column(name = "evaluate_error", length = 1000)
   private String evaluateError;
+
+  @Column(name = "overall_score")
+  private Integer overallScore;
+
+  @Column(name = "evaluation_report", columnDefinition = "TEXT")
+  private String evaluationReport;
+
+  @Column(name = "evaluated_at")
+  private LocalDateTime evaluatedAt;
 
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
@@ -117,22 +129,26 @@ public class InterviewSessionEntity {
   }
 
   public void markGenerationProcessing() {
-    generationStatus = "PROCESSING";
+    if (status == InterviewSessionStatus.CREATED
+        && generationStatus != AsyncTaskStatus.COMPLETED) {
+      generationStatus = AsyncTaskStatus.PROCESSING;
+      generationError = null;
+    }
   }
 
   public void markGenerationCompleted(Long firstTurnId) {
-    generationStatus = "COMPLETED";
+    generationStatus = AsyncTaskStatus.COMPLETED;
     generationError = null;
     currentTopicOrder = 0;
     currentTurnId = firstTurnId;
     totalTurns = 1;
-    transitionTo(InterviewSessionStatus.READY);
+    startedAt = LocalDateTime.now();
+    transitionTo(InterviewSessionStatus.IN_PROGRESS);
   }
 
   public void markGenerationFailed(String error) {
-    generationStatus = "FAILED";
+    generationStatus = AsyncTaskStatus.FAILED;
     generationError = error == null ? null : error.substring(0, Math.min(1000, error.length()));
-    failGeneration(error);
   }
 
   public void transitionTo(InterviewSessionStatus target) {
@@ -140,32 +156,14 @@ public class InterviewSessionEntity {
       throw new InvalidInterviewStateTransitionException(status, target);
     }
     status = target;
-    if (target != InterviewSessionStatus.GENERATION_FAILED
-        && target != InterviewSessionStatus.EVALUATION_FAILED
-        && target != InterviewSessionStatus.ABORTED) {
+    if (target != InterviewSessionStatus.ABORTED) {
       statusReason = null;
     }
-  }
-
-  public void failGeneration(String reason) {
-    transitionTo(InterviewSessionStatus.GENERATION_FAILED);
-    statusReason = normalizeReason(reason);
-  }
-
-  public void failEvaluation(String reason) {
-    transitionTo(InterviewSessionStatus.EVALUATION_FAILED);
-    statusReason = normalizeReason(reason);
   }
 
   public void abort(String reason) {
     transitionTo(InterviewSessionStatus.ABORTED);
     statusReason = normalizeReason(reason);
-  }
-
-  public void beginProgress() {
-    if (status == InterviewSessionStatus.READY) {
-      transitionTo(InterviewSessionStatus.IN_PROGRESS);
-    }
   }
 
   public void moveToTurn(Long turnId, int topicOrder) {
@@ -179,6 +177,37 @@ public class InterviewSessionEntity {
       transitionTo(InterviewSessionStatus.COMPLETED);
       completedAt = LocalDateTime.now();
     }
+  }
+
+  public void markEvaluationPending() {
+    if (status == InterviewSessionStatus.COMPLETED) {
+      evaluateStatus = AsyncTaskStatus.PENDING;
+      evaluateError = null;
+    }
+  }
+
+  public void markEvaluationProcessing() {
+    if (status != InterviewSessionStatus.COMPLETED
+        || evaluateStatus == AsyncTaskStatus.COMPLETED) {
+      return;
+    }
+    evaluateStatus = AsyncTaskStatus.PROCESSING;
+    evaluateError = null;
+  }
+
+  public void completeEvaluation(Integer overallScore, String evaluationReport,
+      LocalDateTime evaluatedAt) {
+    if (status != InterviewSessionStatus.COMPLETED) return;
+    this.overallScore = overallScore;
+    this.evaluationReport = evaluationReport;
+    this.evaluatedAt = evaluatedAt;
+    evaluateStatus = AsyncTaskStatus.COMPLETED;
+    evaluateError = null;
+  }
+
+  public void markEvaluationFailed(String error) {
+    evaluateStatus = AsyncTaskStatus.FAILED;
+    evaluateError = normalizeReason(error);
   }
 
   @PrePersist

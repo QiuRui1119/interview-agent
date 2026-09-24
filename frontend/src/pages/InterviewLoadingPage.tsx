@@ -11,12 +11,12 @@ export function InterviewLoadingPage() {
 
   useEffect(() => {
     if (data && data.generationStatus === 'COMPLETED' && data.currentTurn
-      && data.status !== 'ABORTED' && data.status !== 'GENERATION_FAILED') {
+      && data.status !== 'ABORTED') {
       navigate(PAGE_ROUTES.interview(sessionId), { replace: true })
     }
   }, [data, navigate, sessionId])
 
-  if (data?.generationStatus === 'FAILED' || data?.status === 'GENERATION_FAILED' || data?.status === 'ABORTED') {
+  if (data?.generationStatus === 'FAILED' || data?.status === 'ABORTED') {
     return <main className="interview-page"><div className="interview-state error-alert"><AlertCircle size={18} /><span>{data.status === 'ABORTED' ? 'This interview was aborted.' : 'Interview generation failed.'}</span></div><Link className="secondary-button" to={PAGE_ROUTES.interviewsNew}>Back</Link></main>
   }
 

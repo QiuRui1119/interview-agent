@@ -1,5 +1,6 @@
 package com.interview.modules.interview.model;
 
+import com.interview.common.model.AsyncTaskStatus;
 import java.util.List;
 
 public record InterviewResumeResponse(
@@ -8,7 +9,9 @@ public record InterviewResumeResponse(
     Integer currentTopicOrder,
     Integer completedTopicCount,
     Integer totalTurns,
-    String generationStatus,
+    AsyncTaskStatus generationStatus,
+    AsyncTaskStatus evaluateStatus,
+    String evaluateError,
     InterviewTurnCache currentTurn,
     List<InterviewRecentTurnCache> recentTurns
 ) {}

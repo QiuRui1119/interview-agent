@@ -7,12 +7,13 @@ const POLL_MS = 2000
 const MAX_RETRY_MS = 30000
 
 function shouldPoll(data: InterviewResumeResponse | null, waitingTurnId: number | null) {
-  if (!data || data.status === 'COMPLETED' || data.status === 'EVALUATED'
-    || data.status === 'ABORTED' || data.status === 'GENERATION_FAILED') return false
-  return data.generationStatus === 'PENDING' || data.generationStatus === 'PROCESSING'
-    || data.currentTurn?.status === 'DECIDING'
+  if (!data || data.status === 'ABORTED') return false
+  if (data.generationStatus === 'PENDING' || data.generationStatus === 'PROCESSING') return true
+  if (data.status === 'COMPLETED') return false
+  return data.status === 'IN_PROGRESS'
+    && (data.currentTurn?.status === 'DECIDING'
     || (data.currentTurn?.status === 'ANSWER_PENDING' && data.currentTurn.answer !== null)
-    || (waitingTurnId !== null && data.currentTurn?.id === waitingTurnId)
+    || (waitingTurnId !== null && data.currentTurn?.id === waitingTurnId))
 }
 
 export function useInterviewResume(sessionId: string, waitingTurnId: number | null = null) {

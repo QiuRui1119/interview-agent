@@ -36,8 +36,7 @@ public class InterviewSessionCacheService {
             cache.sessionId(), existing.version(), cache.version());
         return;
       }
-      if (cache.status() == InterviewSessionStatus.COMPLETED
-          || cache.status() == InterviewSessionStatus.EVALUATED) {
+      if (cache.status() == InterviewSessionStatus.COMPLETED) {
         delete(cache.sessionId());
         return;
       }
@@ -75,9 +74,7 @@ public class InterviewSessionCacheService {
   }
 
   private static Duration ttl(InterviewSessionStatus status) {
-    return status == InterviewSessionStatus.READY
-        || status == InterviewSessionStatus.IN_PROGRESS
-        || status == InterviewSessionStatus.GENERATING
+    return status == InterviewSessionStatus.IN_PROGRESS
         || status == InterviewSessionStatus.CREATED
         ? ACTIVE_TTL : PAUSED_TTL;
   }
