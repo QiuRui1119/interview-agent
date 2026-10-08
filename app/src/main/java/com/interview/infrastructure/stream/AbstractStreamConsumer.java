@@ -2,6 +2,7 @@ package com.interview.infrastructure.stream;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -17,6 +18,8 @@ import java.util.UUID;
 @Slf4j
 @RequiredArgsConstructor
 public abstract class AbstractStreamConsumer {
+
+  private static final int MAX_RETRIES = 3;
 
   private final RedisService redisService;
   private final AtomicBoolean running = new AtomicBoolean(false);
@@ -112,6 +115,7 @@ public abstract class AbstractStreamConsumer {
   private void processMessage(
       StreamMessageId messageId,
       Map<String, String> body) {
+    boolean acknowledge = true;
     try {
       markProcessing(body);
       handleMessage(messageId, body);
@@ -119,15 +123,47 @@ public abstract class AbstractStreamConsumer {
     } catch (Exception failure) {
       log.error("Failed to process stream message: streamKey={}, messageId={}",
           streamKey(), messageId, failure);
-      try {
-        handleMessageFailure(messageId, body, failure);
-      } catch (Exception failureHandlerError) {
-        log.error("Failed to handle stream message failure: streamKey={}, messageId={}",
-            streamKey(), messageId, failureHandlerError);
+      int retryCount = retryCount(body);
+      if (retryCount < MAX_RETRIES) {
+        Map<String, String> retryBody = body == null
+            ? new LinkedHashMap<>() : new LinkedHashMap<>(body);
+        retryBody.put(AsyncTaskStreamConstants.FIELD_RETRY_COUNT,
+            Integer.toString(retryCount + 1));
+        try {
+          String retryMessageId = redisService.streamAdd(
+              streamKey(), retryBody, AsyncTaskStreamConstants.STREAM_MAX_LEN);
+          log.warn("Requeued failed stream message: streamKey={}, messageId={}, retryMessageId={}, retryCount={}",
+              streamKey(), messageId, retryMessageId, retryCount + 1);
+        } catch (Exception retryFailure) {
+          acknowledge = false;
+          log.error("Failed to requeue stream message; leaving original pending: streamKey={}, messageId={}",
+              streamKey(), messageId, retryFailure);
+        }
+      } else {
+        log.error("Stream message exhausted retries: streamKey={}, messageId={}, retryCount={}",
+            streamKey(), messageId, retryCount);
+        try {
+          handleMessageFailure(messageId, body, failure);
+        } catch (Exception failureHandlerError) {
+          log.error("Failed to handle terminal stream message failure: streamKey={}, messageId={}",
+              streamKey(), messageId, failureHandlerError);
+        }
       }
     } finally {
-      ackMessage(messageId);
-      log.info("Acknowledged stream message: streamKey={}, messageId={}", streamKey(), messageId);
+      if (acknowledge) {
+        ackMessage(messageId);
+        log.info("Acknowledged stream message: streamKey={}, messageId={}", streamKey(), messageId);
+      }
+    }
+  }
+
+  private static int retryCount(Map<String, String> body) {
+    if (body == null) return MAX_RETRIES;
+    try {
+      return Math.max(0, Integer.parseInt(
+          body.getOrDefault(AsyncTaskStreamConstants.FIELD_RETRY_COUNT, "0")));
+    } catch (NumberFormatException ex) {
+      return MAX_RETRIES;
     }
   }
 
