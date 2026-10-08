@@ -1,6 +1,7 @@
 package com.interview.infrastructure.stream;
 
 import java.util.Map;
+import java.util.HashMap;
 import com.interview.infrastructure.redis.RedisService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,10 @@ public abstract class AbstractStreamProducer {
 
   protected String publish(Map<String, String> body) {
     try {
-      String messageId = redisService.streamAdd(streamKey(), body, AsyncTaskStreamConstants.STREAM_MAX_LEN);
+      Map<String, String> message = new HashMap<>(body);
+      message.putIfAbsent(AsyncTaskStreamConstants.FIELD_RETRY_COUNT, "0");
+      String messageId = redisService.streamAdd(
+          streamKey(), message, AsyncTaskStreamConstants.STREAM_MAX_LEN);
       log.info("Published stream message: streamKey={}, messageId={}", streamKey(), messageId);
       return messageId;
     } catch (Exception e) {
